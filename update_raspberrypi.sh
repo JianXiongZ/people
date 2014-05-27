@@ -30,7 +30,7 @@ while true; do
 	1)
 	    cp -f config/cgminer.avalon2 root/etc/config/cgminer
 	    cp -f config/system root/etc/config/system
-	    cp -f config/00-pcgminer root/etc/uci-defaults/
+	    cp -f config/02-pcgminer root/etc/uci-defaults/
 	    sync
 	    [ $? -eq 0 ] && echo Write avalon2 config success.
 	    [ $? -ne 0 ] && echo Write avalon2 config failed! 
