@@ -1,4 +1,4 @@
 people
 ======
 
-Private repo
+raspberry pi scripts
