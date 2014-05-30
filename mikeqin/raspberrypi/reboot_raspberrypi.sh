@@ -1,4 +1,5 @@
 #!/usr/bin/expect
+set timeout 1
 for {set i 21} {$i < 86} {incr i} {
 	spawn telnet 192.168.1.$i 
 	send "reboot -f\r"
