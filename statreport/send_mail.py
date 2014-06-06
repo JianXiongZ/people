@@ -2,13 +2,6 @@
 import smtplib
 from email.mime.text import MIMEText
 
-mailto_list=["archang@0xf8.com"]
-
-mail_host="smtp.163.com"
-mail_user="avalon_build"
-mail_pass="canaan-creative"
-mail_postfix="163.com"
-
 def send_mail(mail):
 
     me=mail['MAIL_USER']+"<"+mail['FROM_EMAIL_ADDRESS']+">"
