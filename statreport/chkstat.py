@@ -116,7 +116,6 @@ if __name__ == '__main__':
 			continue
 		hosts.append(line)
 	data = chkstat(hosts)
-	print data
 	for miner in data:
 		print miner[0] + ':'
 		i = 1
@@ -133,7 +132,7 @@ if __name__ == '__main__':
 		i = 1
 		for pool_stat in miner[2]:
 			print '\tPool #' + str(i) + ':'
-			print '\t\tDevice Elapsed: ' + pool_stat[0]
+			print '\t\tURL: ' + pool_stat[0]
 			print '\t\tStatus: ' + pool_stat[1]
 			i += 1
 		print "------------------------------------------------------------------------------"

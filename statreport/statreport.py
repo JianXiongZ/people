@@ -4,6 +4,7 @@ from chkstat import chkstat
 import datetime
 
 MOD_NUM_PER_MINER = 10
+SERVER_CODE = 'P'
 
 if __name__ == '__main__':
 	f = open('email.conf', 'r')
@@ -24,7 +25,7 @@ if __name__ == '__main__':
 		hosts.append(line)
 
 	mail['MAIL_USER'] = mail['FROM_EMAIL_ADDRESS'].split('@')[0]
-	mail['SUBJECT'] = "[Miner Status P] Report " + datetime.datetime.now().strftime("%Y.%m.%d %H:%M")
+	mail['SUBJECT'] = "[Miner Status " + SERVER_CODE + "] Report " + datetime.datetime.now().strftime("%Y.%m.%d %H:%M")
 
 	data = chkstat(hosts)
 
