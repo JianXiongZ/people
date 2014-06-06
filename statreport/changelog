@@ -1,10 +1,15 @@
 2014.06.06
-    Change status data aquired, email struct.
-2014.06.05
-    First edition, check err devs/pools and send email
+	Consider one new condition: multi modules(mod) linked to one device(dev)
+	Modify:
+		chkstat.py	:	new data structure deployed, fetching data needed for log files.
 
-	statreport.py:	main file
-	chkstat.py:	telnet into echo miner host to fetch miner status
-	send_email.py:	send_email
+2014.06.06
+	Change status data aquired, email struct.
+2014.06.05
+	First edition, check err devs/pools and send email
+
+	statreport.py	:	main file
+	chkstat.py		:	telnet into echo miner host to fetch miner status
+	send_email.py	:	send_email
 
 	email_example.conf:	example configuration file, contain email from/to address, passwd, server, etc.			
