@@ -2,6 +2,7 @@
 from xml.dom.minidom import parse
 import xml.dom.minidom
 import datetime
+import os
 
 def writelog(data,logdir,filename):
 	## write XML log file
@@ -30,8 +31,12 @@ def writelog(data,logdir,filename):
 			log += "\t\t</pool>\n"
 		log += "\t</miner>\n"
 	log += "</data>"
-
-	logfile = open(logdir + filename, 'w')
+	
+	try:
+		logfile = open(logdir + filename, 'w')
+	except IOError:
+		os.makedirs(logdir)
+		logfile = open(logdir + filename, 'w')
 	logfile.write(log)
 	logfile.close()
 	print 'Done.'
