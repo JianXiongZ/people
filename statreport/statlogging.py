@@ -5,6 +5,7 @@ import datetime
 
 def writelog(data,logdir,filename):
 	## write XML log file
+	print 'Logging into ' + logdir + filename + '... ',
 	log = '<?xml version="1.0"?>\n'
 	time = filename.strip("log-").strip(".xml")
 	log += "<data>\n\t<time>" + time + "</time>\n"
@@ -33,6 +34,7 @@ def writelog(data,logdir,filename):
 	logfile = open(logdir + filename, 'w')
 	logfile.write(log)
 	logfile.close()
+	print 'Done.'
 
 def readlog(logdir,filename):
 	## read XML log file

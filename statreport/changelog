@@ -1,25 +1,29 @@
-2014.06.07
+2014.06.07 #3
+  Modify:
+    statreport.py       :	add argument '-m' to switch sending email.
+
+2014.06.07 #2
   Add:
     log/log-example.xml :	XML example log file, storing miner status.
   Modify:
     statlogging.py      :	add function to read log file.
   
-2014.06.07
+2014.06.07 #1
   Add:
     statlogging.py      :	write miner status log file
 
-2014.06.06
+2014.06.06 #2
   Consider one new condition: multi modules(mod) linked to one device(dev)
   Modify:
     chkstat.py          :	new data structure deployed, fetching data needed for log files.
 
-2014.06.06
+2014.06.06 #1
   Change status data aquired, email struct.
 	
-2014.06.05
+2014.06.05 #1
   First edition, check err devs/pools and send email
   Add:
-    statreport.py:main file
+    statreport.py       :	main file
     chkstat.py          :	telnet into echo miner host to fetch miner status
     send_email.py       :	send_email
 
