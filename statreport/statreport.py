@@ -1,12 +1,20 @@
 #!/usr/bin/env python
 from send_mail import send_mail
 from chkstat import chkstat
+from statlogging import *
 import datetime
 
 MOD_NUM_PER_MINER = 10
 SERVER_CODE = 'P'
+STAT_LOG_PATH = './log'
 
 if __name__ == '__main__':
+	time_now = datetime.datetime.now()
+	time = time_now.strftime("%Y.%m.%d %H:%M")
+	logdir = STAT_LOG_PATH if STAT_LOG_PATH[-1] == '/' else STAT_LOG_PATH + '/'
+	logname = "log-" + time_now.strftime("%Y_%m_%d_%H_%M") + ".xml"
+	
+	
 	f = open('email.conf', 'r')
 	lines = f.read().split('\n')
 	mail={}
@@ -25,10 +33,11 @@ if __name__ == '__main__':
 		hosts.append(line)
 
 	mail['MAIL_USER'] = mail['FROM_EMAIL_ADDRESS'].split('@')[0]
-	mail['SUBJECT'] = "[Miner Status " + SERVER_CODE + "] Report " + datetime.datetime.now().strftime("%Y.%m.%d %H:%M")
+	mail['SUBJECT'] = "[Miner Status " + SERVER_CODE + "] Report " + time
 
 	data = chkstat(hosts)
-
+	writelog(data,logdir,logname)
+	
 	mail['CONTENT'] = '''<html>
 							<body>
 								<a href="https://cex.io/r/0/canaan/0/" title="CEX.IO - Trade Ghashes while they mine you Bitcoins!" target="_blank">	
@@ -40,14 +49,14 @@ if __name__ == '__main__':
 							<table border="1">
 								<tr>
 									<th>IP</th>
-									<th>Active Dev Num</th>
+									<th>Active Mod Num</th>
 								</tr>'''
 	for miner in data:
 		sum_mod_num = 0
 		for dev_stat in miner[1]:
 			sum_mod_num += dev_stat[3]
 		if sum_mod_num < MOD_NUM_PER_MINER:
-			mail['CONTENT'] += '<tr><th>' + miner[0] + "</th><th>" + str(sum_mod_num) + "</th></tr>"
+			mail['CONTENT'] += '<tr><th>' + miner[0] + "</th><th>" + str(sum_mod_num) + "/" + str(MOD_NUM_PER_MINER) + "</th></tr>"
 	mail['CONTENT'] += '</table></p>' 
 	mail['CONTENT'] += '</body></html>'
 	print mail['CONTENT']
