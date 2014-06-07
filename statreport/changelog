@@ -1,20 +1,26 @@
 2014.06.07
-	Add:
-		statlogging.py	:	write miner status log file
-		
-2014.06.06
-	Consider one new condition: multi modules(mod) linked to one device(dev)
-	Modify:
-		chkstat.py		:	new data structure deployed, fetching data needed for log files.
+  Add:
+    log/log-example.xml :	XML example log file, storing miner status.
+  Modify:
+    statlogging.py      :	add function to read log file.
+  
+2014.06.07
+  Add:
+    statlogging.py      :	write miner status log file
 
 2014.06.06
-	Change status data aquired, email struct.
+  Consider one new condition: multi modules(mod) linked to one device(dev)
+  Modify:
+    chkstat.py          :	new data structure deployed, fetching data needed for log files.
+
+2014.06.06
+  Change status data aquired, email struct.
 	
 2014.06.05
-	First edition, check err devs/pools and send email
-	Add:
-		statreport.py	:	main file
-		chkstat.py		:	telnet into echo miner host to fetch miner status
-		send_email.py	:	send_email
+  First edition, check err devs/pools and send email
+  Add:
+    statreport.py:main file
+    chkstat.py          :	telnet into echo miner host to fetch miner status
+    send_email.py       :	send_email
 
-		email_example.conf:	example configuration file, contain email from/to address, passwd, server, etc.			
+    email_example.conf  :	example configuration file, contain email from/to address, passwd, server, etc.			
