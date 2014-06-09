@@ -37,7 +37,6 @@ def chkstat(hosts):
 				print 'Error' + ('. Try Again.' if k < 4 else '. Skip.')
 				err_conn_flag = True
 		if err_conn_flag:
-			err_hosts.append(h)
 			continue
 		
 		## read devs ##
