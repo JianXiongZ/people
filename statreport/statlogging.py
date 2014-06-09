@@ -13,7 +13,10 @@ def writelog(data,logdir,filename):
 	for miner in data:
 		log += "\t<miner>\n"
 		log += "\t\t<IP>" + miner[0] + "</IP>\n"
-		for dev_stat in miner[1]:
+		log += "\t\t<Status>" + miner[1] + "</Status>\n"
+		log += "\t\t<Elapsed>" + miner[2] + "</Elapsed>\n"
+		log += "\t\t<TotalMH>" + miner[3] + "</TotalMH>\n"
+		for dev_stat in miner[4]:
 			log += "\t\t<dev>\n"
 			log += "\t\t\t<DeviceElapsed>" + dev_stat[0] + "</DeviceElapsed>\n"
 			log += "\t\t\t<TotalMH>" + dev_stat[1] + "</TotalMH>\n"
@@ -24,7 +27,7 @@ def writelog(data,logdir,filename):
 			for fan in dev_stat[5]:
 				log += "\t\t\t<FanSpeed>" + fan + "</FanSpeed>\n"
 			log += "\t\t</dev>\n"
-		for pool_stat in miner[2]:
+		for pool_stat in miner[5]:
 			log += "\t\t<pool>\n"
 			log += "\t\t\t<URL>" + pool_stat[0] + "</URL>\n"
 			log += "\t\t\t<Status>" + pool_stat[1] + "</Status>\n"
@@ -52,6 +55,9 @@ def readlog(logdir,filename):
 		dev=[]
 		pool=[]
 		miner.append(minerXML.getElementsByTagName("IP")[0].childNodes[0].data)
+		miner.append(minerXML.getElementsByTagName("Status")[0].childNodes[0].data)
+		miner.append(minerXML.getElementsByTagName("Elapsed")[0].childNodes[0].data)
+		miner.append(minerXML.getElementsByTagName("TotalMH")[0].childNodes[0].data)
 		for dev_statXML in minerXML.getElementsByTagName("dev"):
 			dev_stat=[]
 			dev_stat.append(dev_statXML.getElementsByTagName("DeviceElapsed")[0].childNodes[0].data)
@@ -84,9 +90,9 @@ if __name__ == '__main__':
 	(data,time) = readlog(logdir,logname)
 	
 	for miner in data:
-		print miner[0] + ':'
+		print miner[0] + ': ' + miner[1] + ' ' + miner[2] + ' ' + miner[3]
 		i = 1
-		for dev_stat in miner[1]:
+		for dev_stat in miner[4]:
 			print '\tModule #' + str(i) + ':'
 			print '\t\tDevice Elapsed: ' + dev_stat[0]
 			print '\t\tTotal MH: ' + dev_stat[1]
@@ -97,7 +103,7 @@ if __name__ == '__main__':
 			i += 1
 		
 		i = 1
-		for pool_stat in miner[2]:
+		for pool_stat in miner[5]:
 			print '\tPool #' + str(i) + ':'
 			print '\t\tURL: ' + pool_stat[0]
 			print '\t\tStatus: ' + pool_stat[1]

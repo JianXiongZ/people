@@ -21,23 +21,35 @@ def chkstat(hosts):
     
 	i = 0
 	for h in hosts:
-	
+
+		miner = []
+		
 		tn = telnetlib.Telnet()
 
 		err_conn_flag = False
-		for k in range(0,5):
-			##try connecting for 5 times
+		for k in range(0,3):
+			##try connecting for 3 times
 			try:
 				print 'Conneting ' + h +' ...',
-				tn.open(h,23)
+				tn.open(h,23,1)
 				print 'Done.'
 				break
 			except:
 				tn.close()
-				print 'Error' + ('. Try Again.' if k < 4 else '. Skip.')
+				print 'Error' + ('. Try Again.' if k < 3-1 else '. Skip.')
 				err_conn_flag = True
 		if err_conn_flag:
+			miner.append(h)
+			miner.append('Dead')
+			miner.append('0')
+			miner.append('0')
+			miner.append([])
+			miner.append([])
+			data.append(miner)
 			continue
+		
+		## read summary ##
+		tn.write('cgminer-api -o summary\n')
 		
 		## read devs ##
 		tn.write('cgminer-api -o devs\n')
@@ -55,13 +67,14 @@ def chkstat(hosts):
 		##!!!!!!!!! Bug Warning:
 		##!!!!!!!!! Condition: Some dev gets down between running 'cgminer-api -o devs' & '... -o stats'
 		##!!!!!!!!! Result: Different dev num in dev_data & stat_data
+		summary = tmp[-4]
 		dev_data = tmp[-3]
 		stat_data = tmp[-2]
 		pool_data = tmp[-1]
 
 		tn.close()
 		
-		miner = []
+
 		dev = []
 		pool = []
 
@@ -99,6 +112,15 @@ def chkstat(hosts):
 			pool.append(pool_stat)
 		
 		miner.append(h)
+		miner.append('Alive')
+		try:
+			miner.append(re.search(r'Elapsed=([^,]*),',summary).group(1))
+		except AttributeError:
+			miner.append('0')
+		try:
+			miner.append(total_Mh_flag.search(summary).group(1))
+		except AttributeError:
+			miner.append('0')
 		miner.append(dev)
 		miner.append(pool)
 		data.append(miner)
@@ -116,9 +138,9 @@ if __name__ == '__main__':
 		hosts.append(line)
 	data = chkstat(hosts)
 	for miner in data:
-		print miner[0] + ':'
+		print miner[0] + ': ' + miner[1] + ' ' + miner[2] + ' ' + miner[3]
 		i = 1
-		for dev_stat in miner[1]:
+		for dev_stat in miner[4]:
 			print '\tModule #' + str(i) + ':'
 			print '\t\tDevice Elapsed: ' + dev_stat[0]
 			print '\t\tTotal MH: ' + dev_stat[1]
@@ -129,7 +151,7 @@ if __name__ == '__main__':
 			i += 1
 		
 		i = 1
-		for pool_stat in miner[2]:
+		for pool_stat in miner[5]:
 			print '\tPool #' + str(i) + ':'
 			print '\t\tURL: ' + pool_stat[0]
 			print '\t\tStatus: ' + pool_stat[1]

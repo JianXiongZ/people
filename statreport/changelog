@@ -1,3 +1,10 @@
+2014.06.09 #2
+  Add:
+    hsplot.py           :	funtion to plot hash speed graph
+
+2014.06.09 #1
+  Fix error when cannot connect to some miner.
+
 2014.06.07 #4
   Fix error when log directory does not exist.
   

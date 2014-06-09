@@ -1,22 +1,26 @@
 #!/usr/bin/env python
 from send_mail import send_mail
 from chkstat import chkstat
-from statlogging import *
+from statlogging import writelog
+from hsplot import plot
 import datetime
 import argparse
+import matplotlib
+matplotlib.use('Agg') 
 
 MOD_NUM_PER_MINER = 10
 SERVER_CODE = 'P'
-STAT_LOG_PATH = './log'
+STAT_LOG_DIR = './log'
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Generate miner status report.")
 	parser.add_argument("-m","--email", help="send email", action="store_true")
+	parser.add_argument("-p","--plot", help="plot hash speed graph", action="store_true")
 	args = parser.parse_args()
 		
 	time_now = datetime.datetime.now()
 	time = time_now.strftime("%Y.%m.%d %H:%M")
-	logdir = STAT_LOG_PATH if STAT_LOG_PATH[-1] == '/' else STAT_LOG_PATH + '/'
+	logdir = STAT_LOG_DIR if STAT_LOG_DIR[-1] == '/' else STAT_LOG_DIR + '/'
 	logname = "log-" + time_now.strftime("%Y_%m_%d_%H_%M") + ".xml"
 
 
@@ -30,6 +34,9 @@ if __name__ == '__main__':
 
 	data = chkstat(hosts)
 	writelog(data,logdir,logname)
+
+	if args.plot:
+		plot(time_now,logdir)
 
 	if args.email:
 	
