@@ -2,8 +2,9 @@
 import telnetlib
 import re
 import time
+from readconfig import readconfig
 
-def chkstat(hosts):
+def chkstat(cfg):
 
 	elapsed_time_flag	= re.compile('Device Elapsed=(.*)$')
 	total_Mh_flag		= re.compile('Total MH=([^,]*),')
@@ -20,23 +21,30 @@ def chkstat(hosts):
 	data = []
     
 	i = 0
-	for h in hosts:
+	time_out = []
+	while i < len(cfg['Miner']['miner_list']):
+		h = cfg['Miner']['miner_list'][i]
 
+		if len(time_out) < i+1:
+			time_out.append(1)
+		else:
+			time_out[i] += 1
+			
 		miner = []
 		
 		tn = telnetlib.Telnet()
 
 		err_conn_flag = False
-		for k in range(0,3):
-			##try connecting for 3 times
+		for k in range(0,int(cfg['Telnet']['retry'])):
+			##try connecting for some times
 			try:
 				print 'Conneting ' + h +' ...',
-				tn.open(h,23,1)
+				tn.open(h,23,int(time_out[i]))
 				print 'Done.'
 				break
 			except:
 				tn.close()
-				print 'Error' + ('. Try Again.' if k < 3-1 else '. Skip.')
+				print 'Error' + ('. Try Again.' if k < int(cfg['Telnet']['retry'])-1 else '. Skip.')
 				err_conn_flag = True
 		if err_conn_flag:
 			miner.append(h)
@@ -46,23 +54,32 @@ def chkstat(hosts):
 			miner.append([])
 			miner.append([])
 			data.append(miner)
+			i += 1
 			continue
 		
-		## read summary ##
-		tn.write('cgminer-api -o summary\n')
+		try:
+			## read summary ##
+			tn.write('cgminer-api -o summary\n')
 		
-		## read devs ##
-		tn.write('cgminer-api -o devs\n')
-	
-		## read stats ##
-		tn.write('cgminer-api -o stats\n')
+			## read devs ##
+			tn.write('cgminer-api -o devs\n')
+		
+			## read stats ##
+			tn.write('cgminer-api -o stats\n')
 
-		## read pools ##
-		tn.write('cgminer-api -o pools\n')
+			## read pools ##
+			tn.write('cgminer-api -o pools\n')
 
-		tn.write('exit\n')
+			tn.write('exit\n')
 
-		tmp = tn.read_all().split('cgminer-api')
+			tmp = tn.read_all().split('cgminer-api')
+			
+		except:
+			tn.close()
+			print "Connection lost. Use larger time-out number and try again."
+			continue
+		
+		tn.close()
 
 		##!!!!!!!!! Bug Warning:
 		##!!!!!!!!! Condition: Some dev gets down between running 'cgminer-api -o devs' & '... -o stats'
@@ -72,8 +89,8 @@ def chkstat(hosts):
 		stat_data = tmp[-2]
 		pool_data = tmp[-1]
 
-		tn.close()
-		
+
+		##ToDo: close this loop and create a new one. 
 
 		dev = []
 		pool = []
@@ -129,14 +146,11 @@ def chkstat(hosts):
 	return data
 
 if __name__ == '__main__':
-	hosts=[]
-	f = open('minerlist.txt','r')
-	lines = f.read().split('\n')
-	for line in lines:
-		if line == '':
-			continue
-		hosts.append(line)
-	data = chkstat(hosts)
+	cfg = readconfig("./statreport.conf")
+	if cfg['Log']['directory'][-1] == '/':
+		cfg['Log']['directory'] += '/' 
+	cfg['Miner']['miner_list'] = list(filter(None, (x.strip() for x in cfg['Miner']['miner_list'].splitlines())))	
+	data = chkstat(cfg)
 	for miner in data:
 		print miner[0] + ': ' + miner[1] + ' ' + miner[2] + ' ' + miner[3]
 		i = 1

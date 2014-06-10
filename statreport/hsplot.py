@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 from statlogging import readlog
+from readconfig import readconfig
 
 import matplotlib
-matplotlib.use('Agg') 
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
+from scipy import interpolate
 import numpy as np
 
 import datetime
@@ -13,17 +15,19 @@ import os
 
 
 
-def plot(time0,logdir):
+def plot(time0,cfg):
 	
-	DELAY_TIME = 180
+	
 	
 	
 	deltaT = datetime.timedelta(1)
 	xmllog = []
 	
+	
+	print "Reading Logs... ",
 	t_datetime=[]
 	#find log file in range from $time-$deltaT to $time
-	for logfile in sorted(os.listdir(logdir),reverse=True):
+	for logfile in sorted(os.listdir(cfg['Log']['directory']),reverse=True):
 		if re.match(r'log-(\d+_){4}\d+\.xml',logfile):
 			logtime = datetime.datetime.strptime(logfile.strip('log-').strip('.xml'),"%Y_%m_%d_%H_%M")
 			xmllog.append(logfile)
@@ -32,7 +36,6 @@ def plot(time0,logdir):
 	if len(xmllog) < 2:
 		print "More log files are needed for plotting."
 		return 1
-
 
 	#read hash num & elapsed time into $h[time point(0:)][miner No][]
 	#calculate hash speed into v[time point(ignore #1)]
@@ -43,7 +46,7 @@ def plot(time0,logdir):
 	t = []
 	v = []
 
-	(data,time) = readlog(logdir,xmllog[0])
+	(data,time) = readlog(cfg['Log']['directory'],xmllog[0])
 	ht=[]
 	for i in range(0,len(data)):
 		if data[i][1] == "Alive":
@@ -54,7 +57,7 @@ def plot(time0,logdir):
 	t.append((time-time0).total_seconds())
 	
 	for k in range(1,len(xmllog)):
-		(data,time) = readlog(logdir,xmllog[k])
+		(data,time) = readlog(cfg['Log']['directory'],xmllog[k])
 		tt = (time-time0).total_seconds()
 		ht=[]
 		vt=[]
@@ -64,7 +67,7 @@ def plot(time0,logdir):
 				ht.append( [0,0] )
 			else:
 				ht.append( [ float(data[i][3]),float(data[i][2]) ] )
-				if ht[i][1] - h[k-1][i][1] > tt - t[k-1] - DELAY_TIME: 
+				if ht[i][1] - h[k-1][i][1] > tt - t[k-1] - int(cfg['Plot']['delay_time']): 
 					vt.append((ht[i][0]-h[k-1][i][0])/(ht[i][1]-h[k-1][i][1]))
 				elif data[i][2] != '0':
 					vt.append(ht[i][0]/ht[i][1])
@@ -75,7 +78,7 @@ def plot(time0,logdir):
 		v.append(vt)
 	
 	t = t[1:]
-
+	print "Done.\nPlotting into " + "hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png... ",
 	#total hash speed 
 	vm = []
 	for k in range(0,len(v)):
@@ -87,36 +90,85 @@ def plot(time0,logdir):
 	y = np.array(vm)
 	ymax = np.amax(y)
 	
-	f = interp1d(x, y, kind='cubic')
-	xnew = np.linspace(t[0], t[-1], 40)
+	f = interp1d(x, y)
+	xnew = np.linspace(t[0], t[-1], 1800)
 	
-	plt.plot(xnew,f(xnew),'-')
 	
-	fig = plt.gcf()
-	fig.set_size_inches(1024.0/fig.get_dpi(),768.0/fig.get_dpi())
+	
+	
+	
+	fig = plt.figure(figsize=(float(cfg['Plot']['width'])/float(cfg['Plot']['dpi']),float(cfg['Plot']['height'])/float(cfg['Plot']['dpi'])), dpi=int(cfg['Plot']['dpi']), facecolor="white") 
+	labelfont = {'family' : 'serif',  
+		 'weight' : 'normal',  
+		 'size'   : 12,  
+		 }
+	ticks_font = matplotlib.font_manager.FontProperties(family='serif', style='normal', size=10, weight='normal', stretch='normal')
 
+	plt.plot(xnew,f(xnew),'b-')
 
-	ax=plt.gca()  
-	ax.set_xticks(np.linspace(-24,0,13))
-	ax.set_xticklabels( ('-24', '-22', '-20', '-18', '-16',  '-14',  '-12',  '-10', '-8' , '-6' , '-4' , '-2' , '0' ))  
+	# x axis tick label
+	xticklabel = []
+	xmax = time0 - datetime.timedelta(seconds = (time0.hour - (time0.hour/2)*2)*3600 + time0.minute*60)
+	xmin = xmax
+	xticklabel.append(xmin.strftime("%H:%M"))
+	for i in range(0,12):
+		xmin = xmin - datetime.timedelta(seconds=7200)
+		xticklabel.append(xmin.strftime("%H:%M"))
+	xticklabel = xticklabel[::-1]
 	
+	
+	# y axis tick label
 	ymax_s = str(int(ymax))
-	ylim = int(ymax_s[0])*(10 ** (len(ymax_s)-1)) + (int(ymax_s[1])+1)*(10 ** (len(ymax_s)-2))
-	print ylim
-	ylabel = ['0']
-	for i in range(1,int(ymax_s[0])*10 + 2 + int(ymax_s[1]) ):
-		ylabel.append(str(i*(10 ** (len(ymax_s)-2))))
-	print ylabel
-	ax.set_yticks(np.linspace(0,ylim,int(ymax_s[0])*10 + 1 + int(ymax_s[1])))
-	ax.set_yticklabels( tuple(ylabel))  
+	flag = int(ymax_s[0])
+	yticklabel = ['0']
+	if flag == 1:
+		#0.1;0.2;0.3....
+		ylim = int(ymax_s[0])*(10 ** (len(ymax_s)-1)) + (int(ymax_s[1])+1)*(10 ** (len(ymax_s)-2))
+		for i in range(1,int(ylim/(1*(10**(len(ymax_s)-2))))+1 ):
+			yticklabel.append("{:,}".format(i*(10 ** (len(ymax_s)-2))))
+	elif flag > 1 and flag < 4:
+		#0.2;0.4;0.6...
+		ylim = int(ymax_s[0])*(10 ** (len(ymax_s)-1)) + ((int(ymax_s[1])/2+1)*2)*(10 ** (len(ymax_s)-2))
+		for i in range(1,int(ylim/(2*(10**(len(ymax_s)-2))))+1 ):
+			yticklabel.append("{:,}".format(i*2*(10 ** (len(ymax_s)-2))))
+	elif flag > 3 and flag < 7:
+		#0.25;0.50;0.75...
+		ylim = int(ymax_s[0])*(10 ** (len(ymax_s)-1)) + (((int(ymax_s[1])*10 + int(ymax_s[1]))/25*25+25)*(10 ** (len(ymax_s)-2)))
+		for i in range(1,int(ylim/(25*(10**(len(ymax_s)-3))))+1 ):
+			yticklabel.append("{:,}".format(i*25*(10 ** (len(ymax_s)-3))))
+	elif flag > 6:
+		#0.5;1.0;1.5...
+		ylim = int(ymax_s[0])*(10 ** (len(ymax_s)-1)) + ((int(ymax_s[1])/5+1)*5)*(10 ** (len(ymax_s)-2))
+		for i in range(1,int(ylim/(5*(10**(len(ymax_s)-2))))+1 ):
+			yticklabel.append("{:,}".format(i*5*(10 ** (len(ymax_s)-2))))
+	
+	ax=plt.gca()  
+	ax.set_xticks(np.linspace((xmin-time0).total_seconds()/3600.0,(xmax-time0).total_seconds()/3600.0,13))
+	ax.set_xticklabels( tuple(xticklabel) )  
+	ax.set_yticks(np.linspace(0,ylim,len(yticklabel)))
+	ax.set_yticklabels( tuple(yticklabel) )  
+	
+	ax.set_title("Hash Rate in the past 24 Hours (MHash/s)",fontdict=labelfont)
+	
+	for label in ax.get_xticklabels() :
+		label.set_fontproperties(ticks_font)
+	for label in ax.get_yticklabels() :
+		label.set_fontproperties(ticks_font)
+	
+	plt.axis([-24, 0, 0, ylim])
+
+	plt.grid()
 
 
-
-	plt.savefig("test.png")
-		
+	plt.savefig("hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png")
+	print "Done."
 	
 	
 
 
 if __name__ == '__main__':
-	plot(datetime.datetime.now(),'./log/')
+	cfg = readconfig("./statreport.conf")
+	if cfg['Log']['directory'][-1] == '/':
+		cfg['Log']['directory'] += '/' 
+	cfg['Miner']['miner_list'] = list(filter(None, (x.strip() for x in cfg['Miner']['miner_list'].splitlines())))	
+	plot(datetime.datetime.now(),cfg)

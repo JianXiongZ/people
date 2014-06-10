@@ -1,3 +1,19 @@
+2014.06.10 #1
+  Simplify main file by adding sendmail.py & readconfig.py;
+  More lovely plotted png;
+  Bug fixed, new exception considered.
+  Add:
+    readconfig.py       :	read configuration file.
+    sendmail.py         :	rename from send_email.py, add function to format email content.
+    statreport_example.conf
+                        :	example configuration file.
+  Modify:
+    statreport.py       :	'-c' to choose custom cfg file; '-p' to switch plotting on.
+    hsplot.py           :	plot much more beautiful png file.
+  Remove:
+    minerlist.txt
+    email_example.conf  :	merge into statreport_example.conf
+    
 2014.06.09 #2
   Add:
     hsplot.py           :	funtion to plot hash speed graph

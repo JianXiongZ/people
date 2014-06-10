@@ -1,2 +1,5 @@
-email.conf
+./old/*
+./old/
+statreport.conf
 *.pyc
+*.png
