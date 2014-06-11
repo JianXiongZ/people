@@ -171,7 +171,7 @@ def sendmail(time,data,cfg):
 	for miner in data:
 		sum_mod_num = 0
 		for dev_stat in miner[4]:
-			sum_mod_num += dev_stat[3]
+			sum_mod_num += int(dev_stat[3])
 		if sum_mod_num < int(cfg['Miner']['module_number']):
 			mail['content'] += '''<tr>
                                             <th scope="row" colspan="1" style="text-align:left; border: 1px solid #eee; border-top-width: 4px;"><span

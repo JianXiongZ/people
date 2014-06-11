@@ -6,7 +6,7 @@ import os
 
 def writelog(data,logdir,filename):
 	## write XML log file
-	print 'Logging into ' + logdir + filename + '... ',
+	print 'Logging into ' + logdir + filename + ' ... ',
 	log = '<?xml version="1.0"?>\n'
 	time = filename.strip("log-").strip(".xml")
 	log += "<data>\n\t<time>" + time + "</time>\n"

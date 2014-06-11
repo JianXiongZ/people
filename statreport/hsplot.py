@@ -79,7 +79,7 @@ def plot(time0,cfg):
 		v.append(vt)
 	
 	t = t[1:]
-	print "Done.\nPlotting into " + "hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png... ",
+	print "Done.\nPlotting into " + cfg['Plot']['img_dir'] + "hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png ... ",
 	#total hash speed 
 	vm = []
 	for k in range(0,len(v)):

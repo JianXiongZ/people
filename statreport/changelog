@@ -1,4 +1,8 @@
-2014.06.12 #2
+2014.06.11 #3
+  Modify:
+    statreport.py       :	'-n' to skip writing xml log.
+
+2014.06.11 #2
   Add img folder setting in cfg file.
 
 2014.06.11 #1

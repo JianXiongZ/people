@@ -2,6 +2,7 @@
 from sendmail import sendmail
 from chkstat import chkstat
 from statlogging import writelog
+from statlogging import readlog
 from hsplot import plot
 from readconfig import readconfig
 import datetime
@@ -10,6 +11,7 @@ import os
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Generate miner status report.")
+	parser.add_argument("-n","--nolog", help="do not write xml log", action="store_true")
 	parser.add_argument("-m","--email", help="send email", action="store_true")
 	parser.add_argument("-p","--plot", help="plot hash speed graph", action="store_true")
 	parser.add_argument("-c","--config", type=str, help="use another config file rather than ./statreport.conf")
@@ -34,10 +36,9 @@ if __name__ == '__main__':
 	
 	time_now = datetime.datetime.now()
 
-
-	data = chkstat(cfg)
-
-	writelog(data,cfg['Log']['directory'],"log-" + time_now.strftime("%Y_%m_%d_%H_%M") + ".xml")
+	if not args.nolog:
+		data = chkstat(cfg)
+		writelog(data,cfg['Log']['directory'],"log-" + time_now.strftime("%Y_%m_%d_%H_%M") + ".xml")
 
 	if args.plot:
 		png = plot(time_now,cfg)
@@ -45,5 +46,7 @@ if __name__ == '__main__':
 		cfg['Email']['img'] = png
 
 	if args.email:
+		if args.nolog:
+			(data,time_now) = readlog(cfg['Log']['directory'], sorted(os.listdir(cfg['Log']['directory']),reverse=True)[0])
 		sendmail(time_now.strftime("%Y-%m-%d %H:%M"),data,cfg)
 		
