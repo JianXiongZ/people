@@ -12,7 +12,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Generate miner status report.")
 	parser.add_argument("-m","--email", help="send email", action="store_true")
 	parser.add_argument("-p","--plot", help="plot hash speed graph", action="store_true")
-	parser.add_argument("-c","--config", type=str, help="change config file. default: ./statreport.conf")
+	parser.add_argument("-c","--config", type=str, help="use another config file rather than ./statreport.conf")
 	args = parser.parse_args()
 	
 	
@@ -34,7 +34,8 @@ if __name__ == '__main__':
 	writelog(data,cfg['Log']['directory'],"log-" + time_now.strftime("%Y_%m_%d_%H_%M") + ".xml")
 
 	if args.plot:
-		plot(time_now,cfg)
+		png = plot(time_now,cfg)
+		cfg['Email']['img'] = png
 
 	if args.email:
 		sendmail(time_now.strftime("%Y-%m-%d %H:%M"),data,cfg)

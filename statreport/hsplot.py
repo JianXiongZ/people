@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from scipy import interpolate
 import numpy as np
+from mpl_toolkits.axes_grid.axislines import Subplot
 
 import datetime
 import re
@@ -100,9 +101,9 @@ def plot(time0,cfg):
 	fig = plt.figure(figsize=(float(cfg['Plot']['width'])/float(cfg['Plot']['dpi']),float(cfg['Plot']['height'])/float(cfg['Plot']['dpi'])), dpi=int(cfg['Plot']['dpi']), facecolor="white") 
 	labelfont = {'family' : 'serif',  
 		 'weight' : 'normal',  
-		 'size'   : 12,  
+		 'size'   : int(cfg['Plot']['font_size1']),  
 		 }
-	ticks_font = matplotlib.font_manager.FontProperties(family='serif', style='normal', size=10, weight='normal', stretch='normal')
+	ticks_font = matplotlib.font_manager.FontProperties(family='serif', style='normal', size=int(cfg['Plot']['font_size2']), weight='normal', stretch='normal')
 
 	plt.plot(xnew,f(xnew),'b-')
 
@@ -124,29 +125,37 @@ def plot(time0,cfg):
 	if flag == 1:
 		#0.1;0.2;0.3....
 		ylim = int(ymax_s[0])*(10 ** (len(ymax_s)-1)) + (int(ymax_s[1])+1)*(10 ** (len(ymax_s)-2))
-		for i in range(1,int(ylim/(1*(10**(len(ymax_s)-2))))+1 ):
+		ystep = 1*(10**(len(ymax_s)-2))
+		for i in range(1,int(ylim/ystep) ):
 			yticklabel.append("{:,}".format(i*(10 ** (len(ymax_s)-2))))
 	elif flag > 1 and flag < 4:
 		#0.2;0.4;0.6...
 		ylim = int(ymax_s[0])*(10 ** (len(ymax_s)-1)) + ((int(ymax_s[1])/2+1)*2)*(10 ** (len(ymax_s)-2))
-		for i in range(1,int(ylim/(2*(10**(len(ymax_s)-2))))+1 ):
+		ystep = 2*(10**(len(ymax_s)-2))
+		for i in range(1,int(ylim/ystep) ):
 			yticklabel.append("{:,}".format(i*2*(10 ** (len(ymax_s)-2))))
 	elif flag > 3 and flag < 7:
 		#0.25;0.50;0.75...
 		ylim = int(ymax_s[0])*(10 ** (len(ymax_s)-1)) + (((int(ymax_s[1])*10 + int(ymax_s[1]))/25*25+25)*(10 ** (len(ymax_s)-2)))
-		for i in range(1,int(ylim/(25*(10**(len(ymax_s)-3))))+1 ):
+		ystep = 25*(10**(len(ymax_s)-3))
+		for i in range(1,int(ylim/ystep) ):
 			yticklabel.append("{:,}".format(i*25*(10 ** (len(ymax_s)-3))))
 	elif flag > 6:
 		#0.5;1.0;1.5...
+		ystep = 5*(10**(len(ymax_s)-2))
 		ylim = int(ymax_s[0])*(10 ** (len(ymax_s)-1)) + ((int(ymax_s[1])/5+1)*5)*(10 ** (len(ymax_s)-2))
-		for i in range(1,int(ylim/(5*(10**(len(ymax_s)-2))))+1 ):
+		for i in range(1,int(ylim/ystep) ):
 			yticklabel.append("{:,}".format(i*5*(10 ** (len(ymax_s)-2))))
 	
 	ax=plt.gca()  
 	ax.set_xticks(np.linspace((xmin-time0).total_seconds()/3600.0,(xmax-time0).total_seconds()/3600.0,13))
 	ax.set_xticklabels( tuple(xticklabel) )  
-	ax.set_yticks(np.linspace(0,ylim,len(yticklabel)))
-	ax.set_yticklabels( tuple(yticklabel) )  
+	ax.set_yticks(np.linspace(0,ylim-ystep,len(yticklabel)))
+	ax.set_yticklabels( tuple(yticklabel) )
+
+	ax.tick_params(tick1On = False, tick2On = False)
+	ax.spines['right'].set_visible(False)
+	ax.spines['top'].set_visible(False)
 	
 	ax.set_title("Hash Rate in the past 24 Hours (MHash/s)",fontdict=labelfont)
 	
@@ -157,12 +166,12 @@ def plot(time0,cfg):
 	
 	plt.axis([-24, 0, 0, ylim])
 
-	plt.grid()
-
+	plt.grid(color = '0.75', linestyle='-')
+	plt.tight_layout()
 
 	plt.savefig("hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png")
 	print "Done."
-	
+	return "hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png"
 	
 
 

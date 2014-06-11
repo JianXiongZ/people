@@ -1,0 +1,17 @@
+usage: statreport.py [-h] [-m] [-p] [-c CONFIG]
+
+Generate miner status report.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -m, --email           send email
+  -p, --plot            plot hash speed graph
+  -c CONFIG, --config CONFIG
+                        use another config file rather than ./statreport.conf                        
+                        
+in crontab:
+# m h  dom mon dow   command
+0 1-23/2 * * * cd ~/path/to/statreport;./statreport.py
+0      0 * * * cd ~/path/to/statreport;./statreport.py -m
+0      2 * * * cd ~/path/to/statreport;./statreport.py -mp
+0 4-22/2 * * * cd ~/path/to/statreport;./statreport.py -m
