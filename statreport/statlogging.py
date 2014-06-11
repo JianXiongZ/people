@@ -35,11 +35,7 @@ def writelog(data,logdir,filename):
 		log += "\t</miner>\n"
 	log += "</data>"
 	
-	try:
-		logfile = open(logdir + filename, 'w')
-	except IOError:
-		os.makedirs(logdir)
-		logfile = open(logdir + filename, 'w')
+	logfile = open(logdir + filename, 'w')
 	logfile.write(log)
 	logfile.close()
 	print 'Done.'

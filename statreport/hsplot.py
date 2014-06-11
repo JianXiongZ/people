@@ -169,7 +169,8 @@ def plot(time0,cfg):
 	plt.grid(color = '0.75', linestyle='-')
 	plt.tight_layout()
 
-	plt.savefig("hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png")
+	
+	plt.savefig(cfg['Plot']['img_dir'] + "hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png")
 	print "Done."
 	return "hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png"
 	

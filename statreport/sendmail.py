@@ -19,7 +19,7 @@ def post(mail):
 	msg.attach(msg_alternative)
 	
 	if 'img' in mail:
-		img = dict(path=mail['img'], cid=str(uuid.uuid4()))
+		img = dict(path=mail['img_dir'] + mail['img'], cid=str(uuid.uuid4()))
 		msg_html = MIMEText(mail['content'].replace('$IMG_CID$',img['cid']),'HTML')
 		msg_alternative.attach(msg_html)
 
@@ -75,7 +75,6 @@ def post2(mail):
 		return False
 def sendmail(time,data,cfg):
 	mail = cfg['Email'] 
-
 
 	mail['user'] = mail['from_address'].split('@')[0]
 	mail['subject'] = "[Miner Status " + cfg['Miner']['server_code'] + "] Report " + time

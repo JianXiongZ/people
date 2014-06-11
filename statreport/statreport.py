@@ -6,7 +6,7 @@ from hsplot import plot
 from readconfig import readconfig
 import datetime
 import argparse
-
+import os
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Generate miner status report.")
@@ -22,6 +22,12 @@ if __name__ == '__main__':
 		cfg = readconfig("./statreport.conf")
 	if cfg['Log']['directory'][-1] != '/':
 		cfg['Log']['directory'] += '/' 
+	if cfg['Plot']['img_dir'][-1] != '/':
+		cfg['Plot']['img_dir'] += '/' 
+	if not os.path.isdir(cfg['Log']['directory']):
+		os.makedirs(cfg['Log']['directory'])
+	if not os.path.isdir(cfg['Plot']['img_dir']):
+		os.makedirs(cfg['Plot']['img_dir'])
 	cfg['Miner']['miner_list'] = list(filter(None, (x.strip() for x in cfg['Miner']['miner_list'].splitlines())))	
 		
 		
@@ -35,6 +41,7 @@ if __name__ == '__main__':
 
 	if args.plot:
 		png = plot(time_now,cfg)
+		cfg['Email']['img_dir'] = cfg['Plot']['img_dir']
 		cfg['Email']['img'] = png
 
 	if args.email:

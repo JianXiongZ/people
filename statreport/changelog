@@ -1,3 +1,11 @@
+2014.06.12 #2
+  Add img folder setting in cfg file.
+
+2014.06.11 #1
+  Modify:
+    hsplot.py           :	edit plotting setting.
+    sendmail.py         :	img can be attched, new email html format
+
 2014.06.10 #1
   Simplify main file by adding sendmail.py & readconfig.py;
   More lovely plotted png;
