@@ -47,11 +47,15 @@ def tmplot(time0,data,cfg):
 
 
 	fig = plt.figure(figsize=(float(cfg['TMplot']['width'])/float(cfg['TMplot']['dpi']),float(cfg['TMplot']['height'])/float(cfg['TMplot']['dpi'])), dpi=int(cfg['TMplot']['dpi']), facecolor="white")
-	labelfont = {'family' : cfg['TMplot']['font_family1'],
+	titlefont = {'family' : cfg['TMplot']['font_family1'],
 		'weight' : 'normal',
 		'size'   : int(cfg['TMplot']['font_size1']),
 		 }
-	ticks_font = matplotlib.font_manager.FontProperties(family=cfg['TMplot']['font_size2'], style='normal', size=int(cfg['TMplot']['font_size2']), weight='normal', stretch='normal')
+	labelfont = {'family' : cfg['TMplot']['font_family2'],
+		'weight' : 'normal',
+		'size'   : int(cfg['TMplot']['font_size2']),
+		 }
+	ticks_font = matplotlib.font_manager.FontProperties(family=cfg['TMplot']['font_family3'], style='normal', size=int(cfg['TMplot']['font_size3']), weight='normal', stretch='normal')
 
 
 	gci=plt.imshow(grid_z, extent=extent, origin='lower',cmap=cmap, norm=norm)
@@ -64,7 +68,11 @@ def tmplot(time0,data,cfg):
 	ax.set_xticklabels(tuple(xl))
 	ax.set_yticks(np.linspace(0.5,int(cfg['Physics']['layers'])-0.5,int(cfg['Physics']['layers'])))
 	ax.set_yticklabels(tuple(yl))
-	ax.set_title("Temperature Map",fontdict=labelfont)
+	ax.set_title(cfg['TMplot']['title'],fontdict=titlefont)
+	for label in ax.get_xticklabels() :
+		label.set_fontproperties(ticks_font)
+	for label in ax.get_yticklabels() :
+		label.set_fontproperties(ticks_font)
 	ax.set_xlabel("Shelves",fontdict=labelfont)
 	ax.set_ylabel("Layers",fontdict=labelfont)
 	ax.tick_params(tick1On = False, tick2On = False)
@@ -75,6 +83,8 @@ def tmplot(time0,data,cfg):
 	cbar.set_label('Temperature ($^{\circ}C$)',fontdict=labelfont)
 	cbar.set_ticks(np.linspace(50,80,4))
 	cbar.set_ticklabels( ('50', '60', '70', '80'))
+	for tick in cbar.ax.yaxis.majorTicks:
+		    tick.label2.set_fontproperties(ticks_font)
 	plt.tight_layout()
 
 	plt.savefig(cfg['TMplot']['img_dir'] + "tm-"+time0.strftime("%Y_%m_%d_%H_%M")+".png")

@@ -1,3 +1,6 @@
+2014.06.12 #3
+  Slight modify temperature map format
+
 2014.06.12 #2
   Add:
     tmplot.py           :	plot temperature map.

@@ -94,7 +94,7 @@ def hsplot(time0,cfg):
 
 
 	fig = plt.figure(figsize=(float(cfg['HSplot']['width'])/float(cfg['HSplot']['dpi']),float(cfg['HSplot']['height'])/float(cfg['HSplot']['dpi'])), dpi=int(cfg['HSplot']['dpi']), facecolor="white")
-	labelfont = {'family' : cfg['HSplot']['font_family1'],
+	titlefont = {'family' : cfg['HSplot']['font_family1'],
 		 'weight' : 'normal',
 		 'size'   : int(cfg['HSplot']['font_size1']),
 		 }
@@ -152,7 +152,7 @@ def hsplot(time0,cfg):
 	ax.spines['right'].set_visible(False)
 	ax.spines['top'].set_visible(False)
 
-	ax.set_title("Hash Rate in the past 24 Hours (MHash/s)",fontdict=labelfont)
+	ax.set_title(cfg['HSplot']['title'],fontdict=titlefont)
 
 	for label in ax.get_xticklabels() :
 		label.set_fontproperties(ticks_font)
