@@ -35,7 +35,7 @@
                             <td style="background-color: #fdfdfd;	-webkit-border-radius:6px !important;border-radius:6px !important;"
                               valign="top">
                               <table border="0" cellpadding="20" cellspacing="0"
-                                width="100%">
+                                width="100%">     
                                   <tr>
                                     <td valign="top">
                                       <div style="color: #737373;	font-family:Arial;	font-size:14px;	line-height:150%;text-align:left;">
@@ -49,10 +49,22 @@
                                       </div>
                                     </td>
                                   </tr>
+                                  {% if tmimg %}
+                                   <tr>
+                                     <td><img alt="" src=cid:{{ tmimg_cid }}><br>
+                                    </td>
+                                  </tr>
+                                  {% endif %}  
+                                  {% if hsimg %}
+                                   <tr>
+                                     <td><img alt="" src=cid:{{ hsimg_cid }}><br>
+                                    </td>
+                                  </tr>
+                                  {% endif %}  
                                   <tr>
                                     <td><span style="color: black; font-size: large;"><span
                                           style="font-weight: bold;">Active IP:</span>
-                                      &nbsp;&nbsp;&nbsp; {{ active_ip_num }}</span></td>
+                                      &nbsp;&nbsp;&nbsp; <span style="font-weight: normal;">{{ active_ip_num }}</span></span></td>
                                   </tr>
                                   <tr>
                                     <td><span style="font-weight: bold; color: black; font-size: large;">Errant
@@ -80,12 +92,7 @@
                                       </table>
                                     </td>
                                   </tr>
-                                  {% if img %}
-                                   <tr>
-                                     <td><img alt="" src=cid:{{ img_cid }}><br>
-                                    </td>
-                                  </tr>
-                                  {% endif %}                                  
+                           
                               </table>
                             </td>
                           </tr>

@@ -18,14 +18,22 @@ def post(mail,template_var):
 	msg_alternative = MIMEMultipart('alternative')
 	msg.attach(msg_alternative)
 
-	if 'img' in mail:
-		img = dict(path=mail['img_dir'] + mail['img'], cid=str(uuid.uuid4()))
+	if 'tmimg' in mail:
+		tmimg = dict(path=mail['tmimg_dir'] + mail['tmimg'], cid=str(uuid.uuid4()))
 
-		with open(img['path'], 'rb') as file:
-			msg_image = MIMEImage(file.read(), name=os.path.basename(img['path']))
-			msg.attach(msg_image)
-		template_var['img_cid'] = img['cid']
-		msg_image.add_header('Content-ID', '<{}>'.format(img['cid']))
+		with open(tmimg['path'], 'rb') as file:
+			msg_tmimage = MIMEImage(file.read(), name=os.path.basename(tmimg['path']))
+			msg.attach(msg_tmimage)
+		template_var['tmimg_cid'] = tmimg['cid']
+		msg_tmimage.add_header('Content-ID', '<{}>'.format(tmimg['cid']))
+	if 'hsimg' in mail:
+		hsimg = dict(path=mail['hsimg_dir'] + mail['hsimg'], cid=str(uuid.uuid4()))
+
+		with open(hsimg['path'], 'rb') as file:
+			msg_hsimage = MIMEImage(file.read(), name=os.path.basename(hsimg['path']))
+			msg.attach(msg_hsimage)
+		template_var['hsimg_cid'] = hsimg['cid']
+		msg_hsimage.add_header('Content-ID', '<{}>'.format(hsimg['cid']))
 	tmp = mail['template'].split('/')
 	template_dir = '/'.join(tmp[:-1])
 	settings.configure(TEMPLATE_DIRS = (template_dir if template_dir else './'))
@@ -68,8 +76,10 @@ def sendmail(time,data,cfg):
 			sum_mod_num += int(dev_stat[3])
 		if sum_mod_num < int(cfg['Miner']['module_number']):
 			template_var['err_miner_list'].append({ 'ip' : miner[0] , 'err_mod_num' : str(sum_mod_num) + "/" + cfg['Miner']['module_number'] })
-	if 'img' in mail:
-		template_var['img'] = True
+	if 'tmimg' in mail:
+		template_var['tmimg'] = True
+	if 'hsimg' in mail:
+		template_var['hsimg'] = True
 	if post(mail,template_var):
 		print "Successed in sending email."
 	else:

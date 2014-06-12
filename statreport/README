@@ -1,4 +1,4 @@
-usage: statreport.py [-h] [-n] [-m] [-p] [-c CONFIG]
+usage: statreport.py [-h] [-n] [-m] [-p] [-t] [-c CONFIG]
 
 Generate miner status report.
 
@@ -6,10 +6,11 @@ optional arguments:
   -h, --help            show this help message and exit
   -n, --nolog           do not write xml log
   -m, --email           send email
-  -p, --plot            plot hash speed graph
+  -p, --hsplot          plot hash speed graph
+  -t, --tmplot          plot temperature map
   -c CONFIG, --config CONFIG
                         use another config file rather than ./statreport.conf
-                  
+                        
                         
 in crontab:
 # devices restart at 2:00, so write log at 1:57
