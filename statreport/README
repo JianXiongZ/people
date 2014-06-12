@@ -1,11 +1,11 @@
 Depends: 
-	python >= 2.7.3
-	python-scipy >= 0.10.1
-	python-numpy >= 1.6.2
-	python-matplotlib >= 1.1.1
-	python-django >= 1.4.5
+	python >= 2.7.3 <=2.7.6
+	python-scipy >= 0.10.1 <= 0.12.0
+	python-numpy >= 1.6.2 <= 1.7.1
+	python-matplotlib >= 1.1.1 <= 1.3.0
+	python-django >= 1.4.5 <= 1.5.5
 	
-	lower version packages are not tested.
+	upper or lower version packages are not tested.
 
 
 usage: statreport.py [-h] [-n] [-m] [-p] [-t] [-c CONFIG]
