@@ -1,3 +1,13 @@
+Depends: 
+	python >= 2.7.3
+	python-scipy >= 0.10.1
+	python-numpy >= 1.6.2
+	python-matplotlib >= 1.1.1
+	python-django >= 1.4.5
+	
+	lower version packages are not tested.
+
+
 usage: statreport.py [-h] [-n] [-m] [-p] [-t] [-c CONFIG]
 
 Generate miner status report.
@@ -15,8 +25,7 @@ optional arguments:
 in crontab:
 # devices restart at 2:00, so write log at 1:57
 # m h  dom mon dow   command
-0   1-23/2 * * * cd /path/to/statreport/;./statreport.py
-57       1 * * * cd /path/to/statreport/;./statreport.py
-0        2 * * * cd /path/to/statreport/;./statreport.py -ntmp
-0 0,4-22/2 * * * cd /path/to/statreport/;./statreport.py -mt
-
+0   1-23/2 * * * cd ~/bin/statreport;./statreport.py
+57       1 * * * cd ~/bin/statreport;./statreport.py
+0        2 * * * cd ~/bin/statreport;./statreport.py -ntmp
+0 0,4-22/2 * * * cd ~/bin/statreport;./statreport.py -mt
