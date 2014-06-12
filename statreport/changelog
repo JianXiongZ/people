@@ -1,3 +1,9 @@
+2014.06.12 #1
+  Add:
+    email.template      :	django html template
+  Modify:
+    sendmail.py         :	reading template file and render html email.
+
 2014.06.11 #3
   Modify:
     statreport.py       :	'-n' to skip writing xml log.
