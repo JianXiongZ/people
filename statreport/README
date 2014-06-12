@@ -17,6 +17,6 @@ in crontab:
 # m h  dom mon dow   command
 0   1-23/2 * * * cd /path/to/statreport/;./statreport.py
 57       1 * * * cd /path/to/statreport/;./statreport.py
-0        2 * * * cd /path/to/statreport/;./statreport.py -nmp
-0 0,4-22/2 * * * cd /path/to/statreport/;./statreport.py -m
+0        2 * * * cd /path/to/statreport/;./statreport.py -ntmp
+0 0,4-22/2 * * * cd /path/to/statreport/;./statreport.py -mt
 
