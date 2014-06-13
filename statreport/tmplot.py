@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('Agg',warn=False)
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def tmplot(time0,data,cfg):

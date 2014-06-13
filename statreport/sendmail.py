@@ -55,6 +55,8 @@ def post(mail,template_var):
 
 
 def sendmail(time,data,cfg):
+
+	print "Sending email to " + cfg['Email']['to_list'].replace(';',' & ') + ' ...'
 	mail = cfg['Email']
 
 	mail['user'] = mail['from_address'].split('@')[0]
@@ -81,9 +83,9 @@ def sendmail(time,data,cfg):
 	if 'hsimg' in mail:
 		template_var['hsimg'] = True
 	if post(mail,template_var):
-		print "Successed in sending email."
+		print " Successed."
 	else:
-		print "Failed in sending email."
+		print " Failed."
 
 if __name__ == '__main__':
 	print 0

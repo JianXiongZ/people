@@ -3,7 +3,7 @@ from statlogging import readlog
 from readconfig import readconfig
 
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('Agg',warn=False)
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 import numpy as np
@@ -20,7 +20,7 @@ def hsplot(time0,cfg):
 	xmllog = []
 
 
-	print "Reading Logs... ",
+	print "Reading Logs: "
 	t_datetime=[]
 	#find log file in range from $time-$deltaT to $time
 	for logfile in sorted(os.listdir(cfg['Log']['directory']),reverse=True):
@@ -35,7 +35,6 @@ def hsplot(time0,cfg):
 
 	#read hash num & elapsed time into $h[time point(0:)][miner No][]
 	#calculate hash speed into v[time point(ignore #1)]
-
 	xmllog = xmllog[::-1]
 
 	h = []
@@ -57,6 +56,7 @@ def hsplot(time0,cfg):
 		tt = (time-time0).total_seconds()
 		ht=[]
 		vt=[]
+		print xmllog[k]
 		for i in range(0,len(data)):
 			if data[i][1] == "Dead":
 				vt.append(0)

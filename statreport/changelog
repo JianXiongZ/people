@@ -1,6 +1,12 @@
+2014.06.13 #2
+  Modify:
+    chkstat.py          :	use multi threads to speed up telnetting
+
 2014.06.13 #1
   Modify:
     tmplot.py           :	change plotting method; fix plotting error when some miners are down.
+
+
 
 
 2014.06.12 #3
@@ -18,7 +24,8 @@
   Modify:
     sendmail.py         :	reading template file and render html email.
 
-    
+
+
     
 2014.06.11 #3
   Modify:
@@ -31,6 +38,7 @@
   Modify:
     hsplot.py           :	edit plotting setting.
     sendmail.py         :	img can be attched, new email html format
+
 
     
     
@@ -49,7 +57,8 @@
   Remove:
     minerlist.txt
     email_example.conf  :	merge into statreport_example.conf
-    
+
+
     
     
 2014.06.09 #2
@@ -58,6 +67,7 @@
 
 2014.06.09 #1
   Fix error when cannot connect to some miner.
+
 
   
   
@@ -78,6 +88,7 @@
   Add:
     statlogging.py      :	write miner status log file
 
+
     
     
 2014.06.06 #2
@@ -87,7 +98,8 @@
 
 2014.06.06 #1
   Change status data aquired, email struct.
-	
+
+
 	
 	
 2014.06.05 #1
