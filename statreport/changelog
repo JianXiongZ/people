@@ -1,3 +1,8 @@
+2014.06.13 #1
+  Modify:
+    tmplot.py           :	change plotting method; fix plotting error when some miners are down.
+
+
 2014.06.12 #3
   Slight modify temperature map format
 

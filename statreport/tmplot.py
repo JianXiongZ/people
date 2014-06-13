@@ -5,19 +5,11 @@ import matplotlib
 matplotlib.use('Agg')
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def griddata(x,y,T):
-	z=[]
-	for j in range(0,len(y)):
-		z.append([])
-		for i in range(0, len(x)):
-			z[j].append(T[int(x[i])][int(y[j])])
-
-	return np.array(z)
-
 def tmplot(time0,data,cfg):
 	print "Plotting into " + cfg['TMplot']['img_dir'] + "tm-"+time0.strftime("%Y_%m_%d_%H_%M")+".png ... ",
 	T = []
-	#Temperature[Shelf #][Layer #]
+	#Temperature[Layer #][Shelf #]
+
 	i = 0
 	n = 0
 	T_sum = 0
@@ -28,23 +20,18 @@ def tmplot(time0,data,cfg):
 				if T_single > 0 and T_single<255 :
 					T_sum += T_single
 					n += 1
-		T_avg = float(T_sum) / n
+		T_avg = float(T_sum) / n if len(miner_stat[4]) != 0 else 256
 		T_sum = 0
 		n = 0
-		i += 1
-		if ( i - 1 ) % int(cfg['Physics']['layers']) == 0:
+		if i < int(cfg['Physics']['layers']):
 			T.append([])
-		T[(i-1)/int(cfg['Physics']['layers'])].append(T_avg)
+		T[i % int(cfg['Physics']['layers'])].append(T_avg)
+		i += 1
 
 
-
-	grid_x = np.arange(0,int(cfg['Physics']['shelves']),int(cfg['Physics']['shelves'])/100.0)
-	grid_y = np.arange(0,int(cfg['Physics']['layers']),int(cfg['Physics']['layers'])/100.0)
-	grid_z = griddata(grid_x,grid_y,T)
-	extent = (0 , int(cfg['Physics']['shelves']) , 0 , int(cfg['Physics']['layers']))
+	T = np.ma.masked_greater(T, 255.5)
 	cmap = matplotlib.cm.jet
 	norm = matplotlib.colors.Normalize(vmin=50, vmax=80)
-
 
 	fig = plt.figure(figsize=(float(cfg['TMplot']['width'])/float(cfg['TMplot']['dpi']),float(cfg['TMplot']['height'])/float(cfg['TMplot']['dpi'])), dpi=int(cfg['TMplot']['dpi']), facecolor="white")
 	titlefont = {'family' : cfg['TMplot']['font_family1'],
@@ -57,9 +44,10 @@ def tmplot(time0,data,cfg):
 		 }
 	ticks_font = matplotlib.font_manager.FontProperties(family=cfg['TMplot']['font_family3'], style='normal', size=int(cfg['TMplot']['font_size3']), weight='normal', stretch='normal')
 
-
-	gci=plt.imshow(grid_z, extent=extent, origin='lower',cmap=cmap, norm=norm)
 	ax=plt.gca()
+	gci = ax.pcolormesh(T, cmap=cmap, norm = norm, edgecolors='white', linewidths=0)
+	ax.patch.set_hatch('/')
+
 	ax.set_xticks(np.linspace(0.5,int(cfg['Physics']['shelves'])-0.5,int(cfg['Physics']['shelves'])))
 	xl=[]
 	for i in range(1,int(cfg['Physics']['shelves'])+1): xl.append(str(i))
