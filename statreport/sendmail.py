@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import smtplib
 import uuid
+import urllib2
 from email.mime.multipart import MIMEMultipart
 from email.mime.text      import MIMEText
 from email.mime.image     import MIMEImage
@@ -82,6 +83,22 @@ def sendmail(time,data,cfg):
 		template_var['tmimg'] = True
 	if 'hsimg' in mail:
 		template_var['hsimg'] = True
+
+	proxy_handler = urllib2.ProxyHandler({})
+	opener = urllib2.build_opener(proxy_handler)
+	urllib2.install_opener(opener)
+	url_list = ['http://blockchain.info/address/1By9TWhEfkKVMDNKxzcnj9bJHEMhGuxgrJ','http://blockchain.info/address/1BzJ2MHXbomiVcsg3x1TK4ANGNLfshmrtC','http://blockchain.info/address/1DZS4m7mUjYVvQKBkX63UjMra6LtZ7RfXq']
+
+	template_var['balance_list']=[]
+	b = 0
+	for url in url_list:
+		s = urllib2.urlopen(url).read()
+		balance = s.split('Final Balance')[1].split(' BTC')[0].split('>')[-1]
+		b += float(balance)
+		template_var['balance_list'].append({'addr' : url.split('/')[-1] , 'num':balance})
+	template_var['balance_list'].append({'addr':'Sum','num':str(b)})
+
+
 	if post(mail,template_var):
 		print " Successed."
 	else:

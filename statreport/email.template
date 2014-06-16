@@ -49,6 +49,28 @@
                                       </div>
                                     </td>
                                   </tr>
+                                  <tr>
+                                    <td><span style="font-weight: bold; color: black; font-size: large;">Final Balance:</span><span style="font-weight: bold; color: black; font-size: large;"><br>
+                                      </span>
+                                      <table style="width: 100%; border: 1px solid #eeeeee;"
+                                        border="1" bordercolor="#eee" cellpadding="6"
+                                        cellspacing="0">
+                                          <tr>
+                                            <th scope="col" style="text-align: left; border: 1px solid #eeeeee; width: 264px;">Address</th>
+                                            <th scope="col" style="text-align: left; border: 1px solid #eeeeee; margin-left: -169px;">Final Balance<br>
+                                            </th>
+                                          </tr>  
+                                        {% for balance in balance_list %}
+                                          <tr>
+                                            <th scope="row" colspan="1" style="text-align:left; border: 1px solid #eee; border-top-width: 4px;"><span
+                                              style="font-weight: normal;">{{ balance.addr }}</span>
+                                            </th>
+                                            <td style="text-align:left; border: 1px solid #eee;	border-top-width: 4px;"><span class="amount">{{ balance.num }}</span></td>
+                                          </tr>
+                                        {% endfor %}
+                                      </table>
+                                    </td>
+                                  </tr>
                                   {% if tmimg %}
                                    <tr>
                                      <td><img alt="" src=cid:{{ tmimg_cid }}><br>

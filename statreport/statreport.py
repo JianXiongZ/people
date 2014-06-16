@@ -9,6 +9,7 @@ from tmplot import tmplot
 import datetime
 import argparse
 import os
+import re
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Generate miner status report.")
@@ -53,12 +54,18 @@ if __name__ == '__main__':
 
 	if args.tmplot:
 		if args.nolog:
-			(data,time_now) = readlog(cfg['Log']['directory'], sorted(os.listdir(cfg['Log']['directory']),reverse=True)[0])
+			for logfile in sorted(os.listdir(cfg['Log']['directory']),reverse=True):
+				if re.match(r'log-(\d+_){4}\d+\.xml',logfile):
+					(data , time_now) = readlog(cfg['Log']['directory'], logfile)
+					break
 		tmpng = tmplot(time_now,data,cfg)
 		cfg['Email']['tmimg_dir'] = cfg['TMplot']['img_dir']
 		cfg['Email']['tmimg'] = tmpng
 	if args.email:
 		if args.nolog:
-			(data,time_now) = readlog(cfg['Log']['directory'], sorted(os.listdir(cfg['Log']['directory']),reverse=True)[0])
+			for logfile in sorted(os.listdir(cfg['Log']['directory']),reverse=True):
+				if re.match(r'log-(\d+_){4}\d+\.xml',logfile):
+					(data , time_now) = readlog(cfg['Log']['directory'], logfile)
+					break
 		sendmail(time_now.strftime("%Y-%m-%d %H:%M"),data,cfg)
 

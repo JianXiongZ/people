@@ -12,15 +12,10 @@ import datetime
 import re
 import os
 
-
-
-def hsplot(time0,cfg):
-
+def readhs(time0,cfg):
 	deltaT = datetime.timedelta(1)
 	xmllog = []
 
-
-	print "Reading Logs: "
 	t_datetime=[]
 	#find log file in range from $time-$deltaT to $time
 	for logfile in sorted(os.listdir(cfg['Log']['directory']),reverse=True):
@@ -74,6 +69,14 @@ def hsplot(time0,cfg):
 		v.append(vt)
 
 	t = t[1:]
+
+	return (t,h,v)
+
+def hsplot(time0,cfg):
+
+
+	print "Reading Logs: "
+	(t,h,v) = readhs(time0,cfg)
 	print "Done.\nPlotting into " + cfg['HSplot']['img_dir'] + "hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png ... ",
 	#total hash speed
 	vm = []
@@ -88,9 +91,6 @@ def hsplot(time0,cfg):
 
 	f = interp1d(x, y)
 	xnew = np.linspace(t[0], t[-1], 1800)
-
-
-
 
 
 	fig = plt.figure(figsize=(float(cfg['HSplot']['width'])/float(cfg['HSplot']['dpi']),float(cfg['HSplot']['height'])/float(cfg['HSplot']['dpi'])), dpi=int(cfg['HSplot']['dpi']), facecolor="white")

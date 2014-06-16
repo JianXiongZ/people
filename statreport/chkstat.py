@@ -53,7 +53,7 @@ def telnetthread(miner_queue,data0,lock,retry):
 
 				except:
 					tn.close()
-					print "Connection to " + miner_ip + "lost. Extend time-out and try again."
+					print "Connection to " + miner_ip + " lost. Extend time-out and try again."
 					continue
 
 				tn.close()
