@@ -117,31 +117,32 @@ def hsplot(time0,cfg):
 
 
 	# y axis tick label
+	print ymax
 	ymax_s = str(int(ymax))
 	flag = int(ymax_s[0])
 	yticklabel = ['0']
 	if flag == 1:
 		#0.1;0.2;0.3....
-		ylim = int(ymax_s[0])*(10 ** (len(ymax_s)-1)) + (int(ymax_s[1])+1)*(10 ** (len(ymax_s)-2))
 		ystep = 1*(10**(len(ymax_s)-2))
+		ylim = int(ymax + ystep -1) / ystep * ystep
 		for i in range(1,int(ylim/ystep) ):
 			yticklabel.append("{:,}".format(i*(10 ** (len(ymax_s)-2))))
 	elif flag > 1 and flag < 4:
 		#0.2;0.4;0.6...
-		ylim = int(ymax_s[0])*(10 ** (len(ymax_s)-1)) + ((int(ymax_s[1])/2+1)*2)*(10 ** (len(ymax_s)-2))
 		ystep = 2*(10**(len(ymax_s)-2))
+		ylim = int(ymax + ystep -1) / ystep * ystep
 		for i in range(1,int(ylim/ystep) ):
 			yticklabel.append("{:,}".format(i*2*(10 ** (len(ymax_s)-2))))
 	elif flag > 3 and flag < 7:
 		#0.25;0.50;0.75...
-		ylim = int(ymax_s[0])*(10 ** (len(ymax_s)-1)) + (((int(ymax_s[1])*10 + int(ymax_s[1]))/25*25+25)*(10 ** (len(ymax_s)-2)))
 		ystep = 25*(10**(len(ymax_s)-3))
+		ylim = int(ymax + ystep -1) / ystep * ystep
 		for i in range(1,int(ylim/ystep) ):
 			yticklabel.append("{:,}".format(i*25*(10 ** (len(ymax_s)-3))))
 	elif flag > 6:
 		#0.5;1.0;1.5...
 		ystep = 5*(10**(len(ymax_s)-2))
-		ylim = int(ymax_s[0])*(10 ** (len(ymax_s)-1)) + ((int(ymax_s[1])/5+1)*5)*(10 ** (len(ymax_s)-2))
+		ylim = int(ymax + ystep -1) / ystep * ystep
 		for i in range(1,int(ylim/ystep) ):
 			yticklabel.append("{:,}".format(i*5*(10 ** (len(ymax_s)-2))))
 
