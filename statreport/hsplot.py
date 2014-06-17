@@ -117,7 +117,6 @@ def hsplot(time0,cfg):
 
 
 	# y axis tick label
-	print ymax
 	ymax_s = str(int(ymax))
 	flag = int(ymax_s[0])
 	yticklabel = ['0']

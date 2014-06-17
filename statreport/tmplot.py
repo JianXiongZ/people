@@ -21,7 +21,7 @@ def tmplot(time0,data,cfg):
 				if T_single > 0 and T_single<255 :
 					T_sum += T_single
 					n += 1
-		if len(miner_stat[4]) != 0 :
+		if n != 0 :
 			T_avg = float(T_sum) / n
 		else:
 			T_avg = 256
