@@ -13,11 +13,11 @@ import re
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Generate miner status report.")
-	parser.add_argument("-n","--nolog", help="do not write xml log", action="store_true")
-	parser.add_argument("-m","--email", help="send email", action="store_true")
-	parser.add_argument("-p","--hsplot", help="plot hash speed graph", action="store_true")
-	parser.add_argument("-t", "--tmplot", help="plot temperature map", action="store_true")
-	parser.add_argument("-c","--config", type=str, help="use another config file rather than ./statreport.conf")
+	parser.add_argument("-n","--nolog", help="do not write xml log; will use former generated log files to plot hashrate graph if '-p' is selected.", action="store_true")
+	parser.add_argument("-m","--email", help="send email.", action="store_true")
+	parser.add_argument("-p","--hsplot", help="plot hash speed graph.", action="store_true")
+	parser.add_argument("-t", "--tmplot", help="plot temperature map.", action="store_true")
+	parser.add_argument("-c","--config", type=str, help="use another config file rather than ./statreport.conf.")
 	args = parser.parse_args()
 
 

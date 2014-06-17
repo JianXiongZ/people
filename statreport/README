@@ -14,12 +14,13 @@ Generate miner status report.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -n, --nolog           do not write xml log
-  -m, --email           send email
-  -p, --hsplot          plot hash speed graph
-  -t, --tmplot          plot temperature map
+  -n, --nolog           do not write xml log; will use former generated log
+                        files to plot hashrate graph if '-p' is selected.
+  -m, --email           send email.
+  -p, --hsplot          plot hash speed graph.
+  -t, --tmplot          plot temperature map.
   -c CONFIG, --config CONFIG
-                        use another config file rather than ./statreport.conf
+                        use another config file rather than ./statreport.conf.
                         
                         
 in crontab:
