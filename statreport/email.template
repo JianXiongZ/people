@@ -41,7 +41,7 @@
                                       <div style="color: #737373;	font-family:Arial;	font-size:14px;	line-height:150%;text-align:left;">
                                         <p style="text-align: center;"><a href="https://cex.io/r/0/canaan/0/"
                                             title="CEX.IO - Trade Ghashes while they mine you Bitcoins!"
-                                            target="_blank"> <img src="http://cex.io/informer/canaan/286ea7ed8c69fe6c98fcefeccb273fab/"
+                                            target="_blank"> <img src="{{ img_url }}"
                                               border="0" height="35" width="500"></a></p>
                                         <p>
                                           <meta http-equiv="content-type" content="text/html; charset=utf-8">
@@ -63,11 +63,16 @@
                                         {% for balance in balance_list %}
                                           <tr>
                                             <th scope="row" colspan="1" style="text-align:left; border: 1px solid #eee; border-top-width: 4px;"><span
-                                              style="font-weight: normal;">{{ balance.addr }}</span>
+                                              style="font-weight: normal;"><a href="{{ balance.url }}">{{ balance.addr }}</a></span>
                                             </th>
                                             <td style="text-align:left; border: 1px solid #eee;	border-top-width: 4px;"><span class="amount">{{ balance.num }}</span></td>
                                           </tr>
                                         {% endfor %}
+                                          <tr>
+                                            <th scope="col" style="text-align: left; border: 1px solid #eeeeee; width: 264px;">Sum</th>
+                                            <td style="text-align:left; border: 1px solid #eee;	border-top-width: 4px;"><span class="amount">{{ sum_balance }}</span></td>
+                                            </th>
+                                          </tr> 
                                       </table>
                                     </td>
                                   </tr>
@@ -87,6 +92,11 @@
                                     <td><span style="color: black; font-size: large;"><span
                                           style="font-weight: bold;">Active IP:</span>
                                       &nbsp;&nbsp;&nbsp; <span style="font-weight: normal;">{{ active_ip_num }}</span></span></td>
+                                  </tr>
+                                  <tr>
+                                    <td><span style="color: black; font-size: large;"><span
+                                          style="font-weight: bold;">Alive Modules:</span>
+                                      &nbsp;&nbsp;&nbsp; <span style="font-weight: normal;">{{ alive_mod_num }}</span></span></td>
                                   </tr>
                                   <tr>
                                     <td><span style="font-weight: bold; color: black; font-size: large;">Errant

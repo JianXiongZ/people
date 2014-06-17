@@ -24,9 +24,9 @@ def readhs(time0,cfg):
 			xmllog.append(logfile)
 			if logtime + deltaT < time0:
 				break
-	if len(xmllog) < 2:
+	if len(xmllog) < 3:
 		print "More log files are needed for plotting."
-		return 1
+		raise NameError
 
 	#read hash num & elapsed time into $h[time point(0:)][miner No][]
 	#calculate hash speed into v[time point(ignore #1)]
@@ -76,7 +76,10 @@ def hsplot(time0,cfg):
 
 
 	print "Reading Logs: "
-	(t,h,v) = readhs(time0,cfg)
+	try:
+		(t,h,v) = readhs(time0,cfg)
+	except NameError:
+		return 1
 	print "Done.\nPlotting into " + cfg['HSplot']['img_dir'] + "hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png ... ",
 	#total hash speed
 	vm = []

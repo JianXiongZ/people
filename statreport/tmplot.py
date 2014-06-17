@@ -22,7 +22,7 @@ def tmplot(time0,data,cfg):
 					T_sum += T_single
 					n += 1
 		if len(miner_stat[4]) != 0 :
-			T_avg = float(Y_sum) / n
+			T_avg = float(T_sum) / n
 		else:
 			T_avg = 256
 			T_err.append([i % int(cfg['Physics']['layers']), i / int(cfg['Physics']['layers'])])
@@ -32,7 +32,6 @@ def tmplot(time0,data,cfg):
 			T.append([])
 		T[i % int(cfg['Physics']['layers'])].append(T_avg)
 		i += 1
-
 	T = np.ma.masked_greater(T, 255.5)
 	cmap = matplotlib.cm.jet
 	norm = matplotlib.colors.Normalize(vmin=50, vmax=80)

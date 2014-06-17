@@ -49,8 +49,9 @@ if __name__ == '__main__':
 
 	if args.hsplot:
 		hspng = hsplot(time_now,cfg)
-		cfg['Email']['hsimg_dir'] = cfg['HSplot']['img_dir']
-		cfg['Email']['hsimg'] = hspng
+		if hspng != 1:
+			cfg['Email']['hsimg_dir'] = cfg['HSplot']['img_dir']
+			cfg['Email']['hsimg'] = hspng
 
 	if args.tmplot:
 		if args.nolog:

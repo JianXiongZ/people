@@ -57,7 +57,7 @@ def post(mail,template_var):
 
 def sendmail(time,data,cfg):
 
-	print "Sending email to " + cfg['Email']['to_list'].replace(';',' & ') + ' ...'
+	print "Sending email to " + cfg['Email']['to_list'].replace(';',' & ') + ' ...',
 	mail = cfg['Email']
 
 	mail['user'] = mail['from_address'].split('@')[0]
@@ -73,30 +73,33 @@ def sendmail(time,data,cfg):
 	template_var['active_ip_num'] = str(alivenum) + '/' + str(len(cfg['Miner']['miner_list']))
 
 	template_var['err_miner_list']=[]
+	alive_mod = 0
 	for miner in data:
 		sum_mod_num = 0
 		for dev_stat in miner[4]:
 			sum_mod_num += int(dev_stat[3])
 		if sum_mod_num < int(cfg['Miner']['module_number']):
 			template_var['err_miner_list'].append({ 'ip' : miner[0] , 'err_mod_num' : str(sum_mod_num) + "/" + cfg['Miner']['module_number'] })
+		alive_mod += sum_mod_num
+	template_var['alive_mod_num'] = str(alive_mod) + '/' + str(len(cfg['Miner']['miner_list']) * int(cfg['Miner']['module_number']))
 	if 'tmimg' in mail:
 		template_var['tmimg'] = True
 	if 'hsimg' in mail:
 		template_var['hsimg'] = True
 
+	template_var['img_url'] = cfg['Refer']['img_url']
 	proxy_handler = urllib2.ProxyHandler({})
 	opener = urllib2.build_opener(proxy_handler)
 	urllib2.install_opener(opener)
-	url_list = ['http://blockchain.info/address/1By9TWhEfkKVMDNKxzcnj9bJHEMhGuxgrJ','http://blockchain.info/address/1BzJ2MHXbomiVcsg3x1TK4ANGNLfshmrtC','http://blockchain.info/address/1DZS4m7mUjYVvQKBkX63UjMra6LtZ7RfXq']
-
+	url_list = list(filter(None, (x.strip() for x in cfg['Refer']['balance_url'].splitlines())))
 	template_var['balance_list']=[]
 	b = 0
 	for url in url_list:
 		s = urllib2.urlopen(url).read()
 		balance = s.split('Final Balance')[1].split(' BTC')[0].split('>')[-1]
 		b += float(balance)
-		template_var['balance_list'].append({'addr' : url.split('/')[-1] , 'num':balance})
-	template_var['balance_list'].append({'addr':'Sum','num':str(b)})
+		template_var['balance_list'].append({'addr' : url.split('/')[-1] , 'num':balance, 'url':url})
+	template_var['sum_balance'] = str(b)
 
 
 	if post(mail,template_var):

@@ -1,4 +1,8 @@
-2014.06.14 #1
+2014.06.17 #1
+  Bugs fixed; slightly change email format.
+
+
+2014.06.16 #1
   Modify:
     tmplot.py           :	subplotting when more shelves added.
     sendmail.py         :	add section to fetch balance data.
