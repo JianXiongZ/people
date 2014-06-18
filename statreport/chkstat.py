@@ -155,6 +155,11 @@ def chkstat(cfg):
 			try:
 				miner.append(re.search(r'Elapsed=([^,]*),',data0[0][i]).group(1))
 			except AttributeError:
+				print cfg['Miner']['miner_list'][i]
+				print data0[0][i]
+				print data0[1][i]
+				print data0[2][i]
+				print data0[3][i]
 				miner.append('0')
 			try:
 				miner.append(total_Mh_flag.search(data0[0][i]).group(1))
