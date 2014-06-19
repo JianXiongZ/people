@@ -23,7 +23,12 @@ def telnetthread(miner_queue,data0,lock,retry):
 						break
 					except:
 						tn.close()
-						print 'Cannot connect to ' + miner_ip + ('. Try Again.' if k < retry-1 else '. Skip.')
+						lock.acquire()
+						if k < retry -1:
+							print '\033[1m\033[33mCannot connect to ' + miner_ip + '. Try Again.\033[0m'
+						else:
+							print '\033[31mCannot connect to ' + miner_ip + '. Skip.\033[0m'
+						lock.release()
 						err_conn_flag = True
 				if err_conn_flag:
 					lock.acquire()
@@ -53,7 +58,9 @@ def telnetthread(miner_queue,data0,lock,retry):
 
 				except:
 					tn.close()
-					print "Connection to " + miner_ip + " lost. Extend time-out and try again."
+					lock.acquire()
+					print "\033[31mConnection to " + miner_ip + " lost. Extend time-out and try again.\033[0m"
+					lock.release()
 					continue
 
 				tn.close()
@@ -66,8 +73,8 @@ def telnetthread(miner_queue,data0,lock,retry):
 				data0[1][miner_id] = tmp[-3]
 				data0[2][miner_id] = tmp[-2]
 				data0[3][miner_id] = tmp[-1]
-				lock.release()
 				print "Complete fetching data from " + miner_ip + "."
+				lock.release()
 				break
 		except Queue.Empty:
 			break

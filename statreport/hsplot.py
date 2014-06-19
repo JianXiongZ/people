@@ -13,7 +13,7 @@ import re
 import os
 
 def readhs(time0,cfg):
-	deltaT = datetime.timedelta(1)
+	deltaT = datetime.timedelta(hours=25)
 	xmllog = []
 
 	t_datetime=[]
