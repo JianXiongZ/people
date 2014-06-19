@@ -73,15 +73,11 @@ def sendmail(time,data,cfg):
 	template_var['active_ip_num'] = str(alivenum) + '/' + str(len(cfg['Miner']['miner_list']))
 
 	template_var['err_miner_list']=[]
-	alive_mod = 0
+	sum_mod_num = 0
 	for miner in data:
-		sum_mod_num = 0
 		for dev_stat in miner[4]:
 			sum_mod_num += int(dev_stat[3])
-		if sum_mod_num < int(cfg['Miner']['module_number']):
-			template_var['err_miner_list'].append({ 'ip' : miner[0] , 'err_mod_num' : str(sum_mod_num) + "/" + cfg['Miner']['module_number'] })
-		alive_mod += sum_mod_num
-	template_var['alive_mod_num'] = str(alive_mod) + '/' + str(len(cfg['Miner']['miner_list']) * int(cfg['Miner']['module_number']))
+	template_var['alive_mod_num'] = str(sum_mod_num) + '/' + str(len(cfg['Miner']['miner_list']) * int(cfg['Miner']['module_number']))
 	if 'tmimg' in mail:
 		template_var['tmimg'] = True
 	if 'hsimg' in mail:
