@@ -63,7 +63,10 @@ def tmplot(time0,data,cfg):
 			sum_mod_num = 0
 			for dev_stat in miner[4]:
 				sum_mod_num += int(dev_stat[3])
-			ax.text(i/int(cfg['Physics']['layers']) + .5 , int(cfg['Physics']['layers']) - .5 - i % int(cfg['Physics']['layers']),str(sum_mod_num)+'/'+cfg['Miner']['module_number'],ha='center',va='center',fontproperties=ticks_font,color='k')
+			if miner[1] == 'Alive':
+				ax.text(i/int(cfg['Physics']['layers']) + .5 , int(cfg['Physics']['layers']) - .5 - i % int(cfg['Physics']['layers']),str(sum_mod_num)+'/'+cfg['Miner']['module_number'],ha='center',va='center',fontproperties=ticks_font,color='k')
+			else:
+				ax.text(i/int(cfg['Physics']['layers']) + .5 , int(cfg['Physics']['layers']) - .5 - i % int(cfg['Physics']['layers']),'N/A',ha='center',va='center',fontproperties=ticks_font,color='k')
 
 		ax.set_xticks(np.linspace(0.5, int(cfg['Physics']['shelves']) - 0.5, int(cfg['Physics']['shelves'])))
 		xl=[]
