@@ -7,7 +7,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def tmplot(time0,data,cfg):
 	print "Plotting into " + cfg['TMplot']['img_dir'] + "tm-"+time0.strftime("%Y_%m_%d_%H_%M")+".png ... ",
-	T = []
+
+	T = [[] for i in range(0,int(cfg['Physics']['layers']))]
 	#Temperature[Layer # -1][Shelf # -1]
 
 	i = 0
@@ -28,9 +29,8 @@ def tmplot(time0,data,cfg):
 			T_err.append([i % int(cfg['Physics']['layers']), i / int(cfg['Physics']['layers'])])
 		T_sum = 0
 		n = 0
-		if i < int(cfg['Physics']['layers']):
-			T.append([])
-		T[i % int(cfg['Physics']['layers'])].append(T_avg)
+
+		T[int(cfg['Physics']['layers']) - 1 - i % int(cfg['Physics']['layers'])].append(T_avg)
 		i += 1
 	T = np.ma.masked_greater(T, 255.5)
 	cmap = matplotlib.cm.jet
