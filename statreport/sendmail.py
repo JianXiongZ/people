@@ -89,13 +89,32 @@ def sendmail(time,data,cfg):
 	urllib2.install_opener(opener)
 	url_list = list(filter(None, (x.strip() for x in cfg['Refer']['balance_url'].splitlines())))
 	template_var['balance_list']=[]
+
+
+
 	b = 0
+	err = 0
 	for url in url_list:
-		s = urllib2.urlopen(url).read()
-		balance = s.split('Final Balance')[1].split(' BTC')[0].split('>')[-1]
-		b += float(balance)
+		retry = 0
+		fail = 1
+		while retry < 3:
+			try:
+				s = urllib2.urlopen(url).read()
+				balance = s.split('Final Balance')[1].split(' BTC')[0].split('>')[-1]
+				b += float(balance)
+				fail = 0
+				break
+			except:
+				retry += 1
+		if fail == 1:
+			err = 1
+			balance = 'Connection Failed'
 		template_var['balance_list'].append({'addr' : url.split('/')[-1] , 'num':balance, 'url':url})
-	template_var['sum_balance'] = str(b)
+	if err == 1:
+		template_var['sum_balance'] = 'N/A'
+	else:
+		template_var['sum_balance'] = str(b)
+
 
 
 	if post(mail,template_var):

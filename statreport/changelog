@@ -1,3 +1,6 @@
+2014.06.20 #2
+  Fix error when balance data cannot be fetched.
+
 2014.06.20 #1
   Add each miner's 15min hash rate to T map.
 
