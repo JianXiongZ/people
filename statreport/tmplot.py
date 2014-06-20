@@ -64,7 +64,16 @@ def tmplot(time0,data,cfg):
 			for dev_stat in miner[4]:
 				sum_mod_num += int(dev_stat[3])
 			if miner[1] == 'Alive':
-				ax.text(i/int(cfg['Physics']['layers']) + .5 , int(cfg['Physics']['layers']) - .5 - i % int(cfg['Physics']['layers']),str(sum_mod_num)+'/'+cfg['Miner']['module_number'],ha='center',va='center',fontproperties=ticks_font,color='k')
+
+				l = len(miner[6].split('.')[0])
+				if l > 2 and l < 6:
+					rate = "%.2f" % (float(miner[6])/1000) + 'G'
+				elif l > 5 and l < 9:
+					rate = "%.2f" % (float(miner[6])/1000000) + 'T'
+				else:
+					rate = "%.2f" % (float(miner[6])) + 'M'
+
+				ax.text(i/int(cfg['Physics']['layers']) + .5 , int(cfg['Physics']['layers']) - .5 - i % int(cfg['Physics']['layers']),str(sum_mod_num)+'/'+cfg['Miner']['module_number'] + '\n' + rate,ha='center',va='center',fontproperties=ticks_font,color='k')
 			else:
 				ax.text(i/int(cfg['Physics']['layers']) + .5 , int(cfg['Physics']['layers']) - .5 - i % int(cfg['Physics']['layers']),'N/A',ha='center',va='center',fontproperties=ticks_font,color='k')
 

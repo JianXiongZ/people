@@ -82,16 +82,17 @@ def telnetthread(miner_queue,data0,lock,retry):
 
 def chkstat(cfg):
 
-	elapsed_time_flag	= re.compile('Device Elapsed=(.*)$')
-	total_Mh_flag		= re.compile('Total MH=([^,]*),')
-	temperature_d_flag	= re.compile('Temperature=([^,]*),')
-	module_id_flag		= re.compile('ID\d MM Version')
-	temperature_s_flag	= re.compile('Temperature(\d=[^,]*),')
-	fan_flag			= re.compile('Fan(\d=[^,]*),')
-	pool_url_flag		= re.compile('URL=([^,]*),')
-	pool_alive_flag		= re.compile('Status=([^,]*),')
+	elapsed_time_flag       = re.compile('Device Elapsed=(.*)$')
+	total_Mh_flag           = re.compile('Total MH=([^,]*),')
+	temperature_d_flag      = re.compile('Temperature=([^,]*),')
+	module_id_flag          = re.compile('ID\d MM Version')
+	temperature_s_flag      = re.compile('Temperature(\d=[^,]*),')
+	fan_flag                = re.compile('Fan(\d=[^,]*),')
+	pool_url_flag           = re.compile('URL=([^,]*),')
+	pool_alive_flag         = re.compile('Status=([^,]*),')
+	miner_15m_flag          = re.compile('MHS 15m=([^,]*),')
 	## ignore pool stat in ' -o stats'
-	stat_pool_flag		= re.compile('ID=POOL')
+	stat_pool_flag          = re.compile('ID=POOL')
 
 	miner_queue = Queue.Queue()
 	lock = threading.Lock()
@@ -174,6 +175,10 @@ def chkstat(cfg):
 				miner.append('0')
 			miner.append(dev)
 			miner.append(pool)
+			try:
+				miner.append(miner_15m_flag.search(data0[0][i]).group(1))
+			except AttributeError:
+				miner.append('0')
 		data.append(miner)
 		i += 1
 	print " Done."

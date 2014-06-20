@@ -32,9 +32,10 @@ def writelog(data,logdir,filename):
 			log += "\t\t\t<URL>" + pool_stat[0] + "</URL>\n"
 			log += "\t\t\t<Status>" + pool_stat[1] + "</Status>\n"
 			log += "\t\t</pool>\n"
+		log += "\t\t<MHS15min>" + miner[6] + "</MHS15min>\n"
 		log += "\t</miner>\n"
 	log += "</data>"
-	
+
 	logfile = open(logdir + filename, 'w')
 	logfile.write(log)
 	logfile.close()
@@ -76,15 +77,19 @@ def readlog(logdir,filename):
 			pool.append(pool_stat)
 		miner.append(dev)
 		miner.append(pool)
+		try:
+			miner.append(minerXML.getElementsByTagName("MHS15min")[0].childNodes[0].data)
+		except:
+			miner.append('0')
 		data.append(miner)
-			
+
 	return (data,time)
-	
+
 if __name__ == '__main__':
 	logdir = './log/'
 	logname = 'log-example.xml'
 	(data,time) = readlog(logdir,logname)
-	
+
 	for miner in data:
 		print miner[0] + ': ' + miner[1] + ' ' + miner[2] + ' ' + miner[3]
 		i = 1
@@ -97,7 +102,7 @@ if __name__ == '__main__':
 			print '\t\tTemperature List: ' + ','.join(dev_stat[4])
 			print '\t\tFan Speed List: ' + ','.join(dev_stat[5])
 			i += 1
-		
+
 		i = 1
 		for pool_stat in miner[5]:
 			print '\tPool #' + str(i) + ':'
