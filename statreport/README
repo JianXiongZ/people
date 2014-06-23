@@ -7,7 +7,9 @@ Depends:
 	
 	upper or lower version packages are not tested.
 
-
+Debian-based Linux distributions:
+	apt-get install python2.7 python-scipy python-numpy python-matplotlib python-django
+	
 usage: statreport.py [-h] [-n] [-m] [-p] [-t] [-c CONFIG]
 
 Generate miner status report.
