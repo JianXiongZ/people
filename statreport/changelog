@@ -1,3 +1,11 @@
+2014.06.23 #1
+  Modify:
+    tmplot.py           :	add notification of single miner modules# & hash-rate changes in T map. 
+    email.template      :	extend html width from 600 to 768
+
+
+
+
 2014.06.20 #2
   Fix error when balance data cannot be fetched.
 

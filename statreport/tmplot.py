@@ -1,12 +1,16 @@
 #!/usr/bin/env python
+from statlogging import readlog
+import os
+import re
+import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg',warn=False)
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def tmplot(time0,data,cfg):
-	print "Plotting into " + cfg['TMplot']['img_dir'] + "tm-"+time0.strftime("%Y_%m_%d_%H_%M")+".png ... ",
+def tmplot(time_now,data,cfg):
+	print "Plotting into " + cfg['TMplot']['img_dir'] + "tm-"+time_now.strftime("%Y_%m_%d_%H_%M")+".png ... ",
 
 	T = [[] for i in range(0,int(cfg['Physics']['layers']))]
 	#Temperature[Layer # -1][Shelf # -1]
@@ -47,6 +51,15 @@ def tmplot(time0,data,cfg):
 		}
 	ticks_font = matplotlib.font_manager.FontProperties(family=cfg['TMplot']['font_family3'], style='normal', size=int(cfg['TMplot']['font_size3']), weight='normal', stretch='normal')
 
+
+	#read last tm-plotted log file
+	for pngfile in sorted(os.listdir(cfg['TMplot']['img_dir']),reverse=True):
+		if re.match(r'tm-(\d+_){4}\d+\.png',pngfile):
+			if datetime.datetime.strptime(pngfile,'tm-%Y_%m_%d_%H_%M.png') >= time_now:
+				continue
+			(data0 , time0) = readlog(cfg['Log']['directory'], pngfile.replace('tm','log').replace('png','xml'))
+			break
+
 	for j in range(0,(int(cfg['Physics']['shelves'])+int(cfg['TMplot']['x_split'])-1)/int(cfg['TMplot']['x_split'])):
 		ax=plt.subplot((int(cfg['Physics']['shelves'])+int(cfg['TMplot']['x_split'])-1)/int(cfg['TMplot']['x_split']), 1 , j+1)
 		if j==0:
@@ -58,11 +71,17 @@ def tmplot(time0,data,cfg):
 		for i in range(j*int(cfg['TMplot']['x_split'])*int(cfg['Physics']['layers']),(j+1)*int(cfg['TMplot']['x_split'])*int(cfg['Physics']['layers'])):
 			try:
 				miner = data[i]
+				miner0 = data0[i]
 			except IndexError:
 				break
 			sum_mod_num = 0
+			sum_mod_num0 = 0
 			for dev_stat in miner[4]:
 				sum_mod_num += int(dev_stat[3])
+			for dev_stat0 in miner0[4]:
+				sum_mod_num0 += int(dev_stat0[3])
+			text_x = i/int(cfg['Physics']['layers']) + .75
+			text_y = int(cfg['Physics']['layers']) - .5 - i % int(cfg['Physics']['layers'])
 			if miner[1] == 'Alive':
 
 				l = len(miner[6].split('.')[0])
@@ -73,9 +92,27 @@ def tmplot(time0,data,cfg):
 				else:
 					rate = "%.2f" % (float(miner[6])) + 'M'
 
-				ax.text(i/int(cfg['Physics']['layers']) + .5 , int(cfg['Physics']['layers']) - .5 - i % int(cfg['Physics']['layers']),str(sum_mod_num)+'/'+cfg['Miner']['module_number'] + '\n' + rate,ha='center',va='center',fontproperties=ticks_font,color='k')
+				ax.text(text_x, text_y, str(sum_mod_num)+'/'+cfg['Miner']['module_number'],ha='right',va='bottom',fontproperties=ticks_font,color='k')
+				ax.text(text_x, text_y, rate,ha='right',va='top',fontproperties=ticks_font,color='k')
+				if sum_mod_num > sum_mod_num0:
+					ax.text(text_x, text_y, r'$\blacktriangle\blacktriangle$',fontproperties=ticks_font,color='k',ha='left',va='bottom')
+				elif sum_mod_num < sum_mod_num0:
+					ax.text(text_x, text_y, r'$\blacktriangledown\blacktriangledown$',fontproperties=ticks_font,color='r',ha='left',va='bottom')
+				else:
+					pass
+				if float(miner[6]) > float(miner0[6])*1.5:
+					ax.text(text_x, text_y, r'$\blacktriangle\blacktriangle$',fontproperties=ticks_font,color='k',ha='left',va='top')
+				elif float(miner[6]) > float(miner0[6])*1.1:
+					ax.text(text_x, text_y, r'$\blacktriangle$',fontproperties=ticks_font,color='k',ha='left',va='top')
+				elif float(miner[6]) < float(miner0[6])*0.5:
+					ax.text(text_x, text_y, r'$\blacktriangledown\blacktriangledown$',fontproperties=ticks_font,color='r',ha='left',va='top')
+				elif float(miner[6]) < float(miner0[6])*0.9:
+					ax.text(text_x, text_y, r'$\blacktriangledown$',fontproperties=ticks_font,color='r',ha='left',va='top')
+				else:
+					pass
+
 			else:
-				ax.text(i/int(cfg['Physics']['layers']) + .5 , int(cfg['Physics']['layers']) - .5 - i % int(cfg['Physics']['layers']),'N/A',ha='center',va='center',fontproperties=ticks_font,color='k')
+				ax.text(text_x, text_y,'N/A',ha='center',va='center',fontproperties=ticks_font,color='k')
 
 		ax.set_xticks(np.linspace(0.5, int(cfg['Physics']['shelves']) - 0.5, int(cfg['Physics']['shelves'])))
 		xl=[]
@@ -83,14 +120,18 @@ def tmplot(time0,data,cfg):
 		yl=[]
 		for i in range(1, int(cfg['Physics']['layers'])+1): yl.append(str(i))
 		ax.set_xticklabels(tuple(xl))
+
 		ax.set_yticks(np.linspace(0.5,int(cfg['Physics']['layers'])-0.5,int(cfg['Physics']['layers'])))
 		ax.set_yticklabels(tuple(yl))
+
 		for label in ax.get_xticklabels() :
 			label.set_fontproperties(ticks_font)
 		for label in ax.get_yticklabels() :
 			label.set_fontproperties(ticks_font)
+
 		ax.set_ylabel("Layers",fontdict=labelfont)
 		ax.tick_params(tick1On = False, tick2On = False)
+
 		ax.set_xlim(j * int(cfg['TMplot']['x_split']), (j + 1) * int(cfg['TMplot']['x_split']))
 		ax.set_ylim(0,5)
 
@@ -106,8 +147,8 @@ def tmplot(time0,data,cfg):
 	ax.set_xlabel("Shelves",fontdict=labelfont)
 	plt.tight_layout()
 
-	plt.savefig(cfg['TMplot']['img_dir'] + "tm-"+time0.strftime("%Y_%m_%d_%H_%M")+".png")
+	plt.savefig(cfg['TMplot']['img_dir'] + "tm-"+time_now.strftime("%Y_%m_%d_%H_%M")+".png")
 	plt.clf()
 	print "Done."
-	return "tm-"+time0.strftime("%Y_%m_%d_%H_%M")+".png"
+	return "tm-"+time_now.strftime("%Y_%m_%d_%H_%M")+".png"
 

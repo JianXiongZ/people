@@ -9,10 +9,10 @@
           <tr>
             <td align="center" valign="top">
               <table id="template_container" style="-webkit-box-shadow:0 0 0 3px rgba(0,0,0,0.025) !important;box-shadow:0 0 0 3px rgba(0,0,0,0.025) !important;-webkit-border-radius:6px !important;border-radius:6px !important;	background-color: #fdfdfd;border: 1px solid #dcdcdc;-webkit-border-radius:6px !important;border-radius:6px !important;"
-                border="0" cellpadding="0" cellspacing="0" width="600">
+                border="0" cellpadding="0" cellspacing="0" width="768">
                   <tr>
                     <td align="center" valign="top">
-                      <table id="template_header" style="background-color: #557da1; color: white; border-top-left-radius: 6px ! important; border-top-right-radius: 6px ! important; border-bottom: 0px none; font-family: Arial; font-weight: bold; line-height: 100%; vertical-align: middle; width: 600px; height: 102px;"
+                      <table id="template_header" style="background-color: #557da1; color: white; border-top-left-radius: 6px ! important; border-top-right-radius: 6px ! important; border-bottom: 0px none; font-family: Arial; font-weight: bold; line-height: 100%; vertical-align: middle; width: 768px; height: 102px;"
                         border="0" cellpadding="0" cellspacing="0">
                           <tr>
                             <td>
@@ -30,7 +30,7 @@
                   <tr>
                     <td align="center" valign="top">
                       <table id="template_body" border="0" cellpadding="0" cellspacing="0"
-                        width="600">
+                        width="768">
                           <tr>
                             <td style="background-color: #fdfdfd;	-webkit-border-radius:6px !important;border-radius:6px !important;"
                               valign="top">
