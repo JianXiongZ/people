@@ -53,6 +53,7 @@ def tmplot(time_now,data,cfg):
 
 
 	#read last tm-plotted log file
+	data0 = data
 	for pngfile in sorted(os.listdir(cfg['TMplot']['img_dir']),reverse=True):
 		if re.match(r'tm-(\d+_){4}\d+\.png',pngfile):
 			if datetime.datetime.strptime(pngfile,'tm-%Y_%m_%d_%H_%M.png') >= time_now:

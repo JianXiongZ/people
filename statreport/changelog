@@ -1,3 +1,6 @@
+2014.06.23 #2
+  Fix error at first time running when no previous T map has been plotted.
+
 2014.06.23 #1
   Modify:
     tmplot.py           :	add notification of single miner modules# & hash-rate changes in T map. 
