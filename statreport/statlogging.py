@@ -3,13 +3,18 @@ from xml.dom.minidom import parse
 import xml.dom.minidom
 import datetime
 import os
+from poolrate import poolrate
 
-def writelog(data,logdir,filename):
+def writelog(data,cfg,filename):
 	## write XML log file
+	logdir = cfg['General']['log_dir']
 	print 'Logging into ' + logdir + filename + ' ... ',
 	log = '<?xml version="1.0"?>\n'
 	time = filename.strip("log-").strip(".xml")
 	log += "<data>\n\t<time>" + time + "</time>\n"
+	sum_pool_rate, pool_rate = poolrate(cfg)
+	log += "\t<SumPoolRate>" +sum_pool_rate + "</SumPoolRate>\n"
+	log += "\t<WorkerPoolRate>" + pool_rate + "</WorkerPoolRate>\n"
 	for miner in data:
 		log += "\t<miner>\n"
 		log += "\t\t<IP>" + miner[0] + "</IP>\n"
@@ -47,6 +52,10 @@ def readlog(logdir,filename):
 	DOMTree = xml.dom.minidom.parse( logdir + filename )
 	log = DOMTree.documentElement
 	time = datetime.datetime.strptime(log.getElementsByTagName("time")[0].childNodes[0].data,"%Y_%m_%d_%H_%M")
+	try: sum_pool_rate = log.getElementsByTagName("SumPoolRate")[0].childNodes[0].data
+	except IndexError: sum_pool_rate = '0'
+	try : pool_rate = log.getElementsByTagName("WorkerPoolRate")[0].childNodes[0].data
+	except IndexError: pool_rate = '0'
 	for minerXML in log.getElementsByTagName("miner"):
 		miner=[]
 		dev=[]
@@ -83,7 +92,8 @@ def readlog(logdir,filename):
 			miner.append('0')
 		data.append(miner)
 
-	return (data,time)
+	return (data,time,sum_pool_rate,pool_rate)
+	#return (data,time)
 
 if __name__ == '__main__':
 	logdir = './log/'

@@ -18,7 +18,7 @@ def readhs(time0,cfg):
 
 	t_datetime=[]
 	#find log file in range from $time-$deltaT to $time
-	for logfile in sorted(os.listdir(cfg['Log']['directory']),reverse=True):
+	for logfile in sorted(os.listdir(cfg['General']['log_dir']),reverse=True):
 		if re.match(r'log-(\d+_){4}\d+\.xml',logfile):
 			logtime = datetime.datetime.strptime(logfile.strip('log-').strip('.xml'),"%Y_%m_%d_%H_%M")
 			xmllog.append(logfile)
@@ -35,8 +35,11 @@ def readhs(time0,cfg):
 	h = []
 	t = []
 	v = []
+	vp = []
+	vps = []
 
-	(data,time) = readlog(cfg['Log']['directory'],xmllog[0])
+	(data,time,sum_pool_rate,pool_rate) = readlog(cfg['General']['log_dir'],xmllog[0])
+	#(data,time) = readlog(cfg['General']['log_dir'],xmllog[0])
 	ht=[]
 	for i in range(0,len(data)):
 		if data[i][1] == "Alive":
@@ -47,7 +50,8 @@ def readhs(time0,cfg):
 	t.append((time-time0).total_seconds())
 
 	for k in range(1,len(xmllog)):
-		(data,time) = readlog(cfg['Log']['directory'],xmllog[k])
+		(data,time,sum_pool_rate,pool_rate) = readlog(cfg['General']['log_dir'],xmllog[k])
+		#(data,time) = readlog(cfg['General']['log_dir'],xmllog[k])
 		tt = (time-time0).total_seconds()
 		ht=[]
 		vt=[]
@@ -67,17 +71,21 @@ def readhs(time0,cfg):
 		t.append(tt)
 		h.append(ht)
 		v.append(vt)
+		vp.append(float(pool_rate))
+		vps.append(float(sum_pool_rate))
+
 
 	t = t[1:]
 
-	return (t,h,v)
+	return (t,h,v,vp,vps)
 
 def hsplot(time0,cfg):
 
 
 	print "Reading Logs: "
 	try:
-		(t,h,v) = readhs(time0,cfg)
+		(t,h,v,vp,vps) = readhs(time0,cfg)
+		#(t,h,v) = readhs(time0,cfg)
 	except NameError:
 		return 1
 	print "Done.\nPlotting into " + cfg['HSplot']['img_dir'] + "hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png ... ",
@@ -89,10 +97,16 @@ def hsplot(time0,cfg):
 
 
 	x = np.array(t)
-	y = np.array(vm)
-	ymax = np.amax(y)
+	y1 = np.array(vm)
+	y2 = np.array(vp)
+	y3 = np.array(vps)
+	ymax = np.amax(np.hstack((y1,y2,y3)))
+	ymax = np.amax(y1)
 
-	f = interp1d(x, y)
+	f1 = interp1d(x, y1)
+	f2 = interp1d(x, y2)
+	f3 = interp1d(x, y3)
+
 	xnew = np.linspace(t[0], t[-1], 1800)
 
 
@@ -103,8 +117,10 @@ def hsplot(time0,cfg):
 		 }
 	ticks_font = matplotlib.font_manager.FontProperties(family=cfg['HSplot']['font_family2'], style='normal', size=int(cfg['HSplot']['font_size2']), weight='normal', stretch='normal')
 
-	plt.plot(xnew,f(xnew),'b-')
-
+	p1, = plt.plot(xnew,f1(xnew),'r-')
+	p2, = plt.plot(xnew,f2(xnew),'g-')
+	p3, = plt.plot(xnew,f3(xnew),'b-')
+	plt.legend((p1,p2,p3),('Local','Sum Workers','Worker'), loc = 0, prop = ticks_font)
 	# x axis tick label
 	xticklabel = []
 	xmax = time0 - datetime.timedelta(seconds = (time0.hour - (time0.hour/2)*2)*3600 + time0.minute*60)
@@ -126,19 +142,19 @@ def hsplot(time0,cfg):
 		ylim = int(ymax + ystep -1) / ystep * ystep
 		for i in range(1,int(ylim/ystep) ):
 			yticklabel.append("{:,}".format(i*(10 ** (len(ymax_s)-2))))
-	elif flag > 1 and flag < 4:
+	elif flag >= 2 and flag <= 3:
 		#0.2;0.4;0.6...
 		ystep = 2*(10**(len(ymax_s)-2))
 		ylim = int(ymax + ystep -1) / ystep * ystep
 		for i in range(1,int(ylim/ystep) ):
 			yticklabel.append("{:,}".format(i*2*(10 ** (len(ymax_s)-2))))
-	elif flag > 3 and flag < 7:
+	elif flag >= 4 and flag <= 6:
 		#0.25;0.50;0.75...
 		ystep = 25*(10**(len(ymax_s)-3))
 		ylim = int(ymax + ystep -1) / ystep * ystep
 		for i in range(1,int(ylim/ystep) ):
 			yticklabel.append("{:,}".format(i*25*(10 ** (len(ymax_s)-3))))
-	elif flag > 6:
+	else:
 		#0.5;1.0;1.5...
 		ystep = 5*(10**(len(ymax_s)-2))
 		ylim = int(ymax + ystep -1) / ystep * ystep
@@ -176,8 +192,6 @@ def hsplot(time0,cfg):
 
 
 if __name__ == '__main__':
-	cfg = readconfig("./statreport.conf")
-	if cfg['Log']['directory'][-1] == '/':
-		cfg['Log']['directory'] += '/'
+	exit()
 	cfg['Miner']['miner_list'] = list(filter(None, (x.strip() for x in cfg['Miner']['miner_list'].splitlines())))
 	plot(datetime.datetime.now(),cfg)
