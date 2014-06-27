@@ -1,0 +1,34 @@
+Index: Makefile
+===================================================================
+--- Makefile	(revision 26)
++++ Makefile	(working copy)
+@@ -3,7 +3,7 @@
+ MAKECMD=make ARCH=mips CROSS_COMPILE=mips-openwrt-linux-uclibc-
+ export PATH:=$(BUILD_TOPDIR)/toolchain/OpenWrt-Toolchain-ar71xx-for-mips_r2-gcc-4.6-linaro_uClibc-0.9.33/toolchain-mips_r2_gcc-4.6-linaro_uClibc-0.9.33/bin/:$(PATH)
+ export STAGING_DIR=$(BUILD_TOPDIR)/tmp
+-export FLASH_SIZE=4
++export FLASH_SIZE=8
+ export COMPRESSED_UBOOT=1
+ export MAX_UBOOT_SIZE=130048 #size 0x1fc00
+ export CONFIG_HORNET_1_1_WAR=1
+Index: u-boot/include/configs/ap121.h
+===================================================================
+--- u-boot/include/configs/ap121.h	(revision 26)
++++ u-boot/include/configs/ap121.h	(working copy)
+@@ -224,7 +224,7 @@
+ #define CFG_ENV_SIZE		0x10000
+ 
+ #if (FLASH_SIZE == 8)
+-    #define CONFIG_BOOTCOMMAND "bootm 0x9f020000"
++    #define CONFIG_BOOTCOMMAND  "mtest 0x80000000 0x83f80000" /*"bootm 0x9f020000"*/
+ #elif (FLASH_SIZE == 4)
+     #define CONFIG_BOOTCOMMAND "bootm 0x9f020000"
+ #else
+@@ -308,6 +308,7 @@
+ #else
+ /* #define CONFIG_COMMANDS	(( CONFIG_CMD_DFL | CFG_CMD_PING | CFG_CMD_NET | CFG_CMD_MII)) */
+ #define CONFIG_COMMANDS (CFG_CMD_LOADB | CFG_CMD_MEMORY | CFG_CMD_FLASH | CFG_CMD_NET)
++#define CFG_ALT_MEMTEST        1
+ #endif /* #ifndef COMPRESSED_UBOOT */
+ 
+ #define CONFIG_CMD_HTTPD 1
