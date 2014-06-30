@@ -38,6 +38,4 @@ def readconfig(cfgfile):
 		cfg['mod_num_list'] += cfg[zone]['mod_num_list']
 	cfg['zone_num'] = i
 	return cfg
-if __name__ == '__main__':
-	print readconfig('./statreport.conf')
 

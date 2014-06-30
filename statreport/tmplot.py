@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+from __future__ import print_function
 from statlogging import readlog
 import os
 import re
 import datetime
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
@@ -12,8 +14,8 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 from matplotlib import gridspec
 
 def tmplot(time_now,data,cfg):
-	print "Plotting into " + cfg['TMplot']['img_dir'] + "tm-"+time_now.strftime("%Y_%m_%d_%H_%M")+".png ... ",
-
+	print("Plotting into " + cfg['TMplot']['img_dir'] + "tm-"+time_now.strftime("%Y_%m_%d_%H_%M")+".png ... ",end="")
+	sys.stdout.flush()
 	T = [[[] for i in range(0,int(cfg['Zone'+str(j+1)]['layers']))] for j in range(0,cfg['zone_num'])]
 	#Temperature[Zone # -1][Layer # -1][Shelf # -1]
 	i = 0
@@ -151,7 +153,7 @@ def tmplot(time_now,data,cfg):
 					if sum_mod_num > sum_mod_num0:
 						ax.text(text_x, text_y, r'$\blacktriangle\blacktriangle$',fontproperties=ticks_font,color='k',ha='left',va='bottom')
 					elif sum_mod_num < sum_mod_num0:
-						ax.text(text_x, text_y, r'$\blacktriangledown\blacktriangledown$',fontproperties=ticks_font,color='r',ha='left',va='bottom')
+						ax.text(text_x, text_y, r'$\blacktriangledown\blacktriangledown$',fontproperties=ticks_font,color='m',ha='left',va='bottom')
 					else:
 						pass
 					if float(miner[6]) > float(miner0[6])*1.5:
@@ -159,9 +161,9 @@ def tmplot(time_now,data,cfg):
 					elif float(miner[6]) > float(miner0[6])*1.1:
 						ax.text(text_x, text_y, r'$\blacktriangle$',fontproperties=ticks_font,color='k',ha='left',va='top')
 					elif float(miner[6]) < float(miner0[6])*0.5:
-						ax.text(text_x, text_y, r'$\blacktriangledown\blacktriangledown$',fontproperties=ticks_font,color='r',ha='left',va='top')
+						ax.text(text_x, text_y, r'$\blacktriangledown\blacktriangledown$',fontproperties=ticks_font,color='m',ha='left',va='top')
 					elif float(miner[6]) < float(miner0[6])*0.9:
-						ax.text(text_x, text_y, r'$\blacktriangledown$',fontproperties=ticks_font,color='r',ha='left',va='top')
+						ax.text(text_x, text_y, r'$\blacktriangledown$',fontproperties=ticks_font,color='m',ha='left',va='top')
 					else:
 						pass
 
@@ -217,6 +219,6 @@ def tmplot(time_now,data,cfg):
 
 	plt.savefig(cfg['TMplot']['img_dir'] + "tm-"+time_now.strftime("%Y_%m_%d_%H_%M")+".png")
 	plt.clf()
-	print "Done."
+	print("Done.")
 	return "tm-"+time_now.strftime("%Y_%m_%d_%H_%M")+".png"
 

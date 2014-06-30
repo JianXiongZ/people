@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import smtplib
 import uuid
 import urllib2
@@ -6,6 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text      import MIMEText
 from email.mime.image     import MIMEImage
 import os
+import sys
 from django.template import loader, Context
 from django.conf import settings
 
@@ -51,13 +53,14 @@ def post(mail,template_var):
 		s.close()
 		return True
 	except Exception, e:
-		print str(e)
+		print(str(e))
 		return False
 
 
 def sendmail(time,data,cfg):
 
-	print "Sending email to " + cfg['Email']['to_list'].replace(';',' & ') + ' ...',
+	print("Sending email to " + cfg['Email']['to_list'].replace(';',' & ') + ' ...',end="")
+	sys.stdout.flush()
 	mail = cfg['Email']
 
 	mail['user'] = mail['from_address'].split('@')[0]
@@ -99,7 +102,7 @@ def sendmail(time,data,cfg):
 	for url in url_list:
 		retry = 0
 		fail = 1
-		while retry < 3:
+		while retry < int(cfg['Pool']['retry']):
 			try:
 				s = urllib2.urlopen(url).read()
 				balance = s.split('Final Balance')[1].split(' BTC')[0].split('>')[-1]
@@ -120,10 +123,7 @@ def sendmail(time,data,cfg):
 
 
 	if post(mail,template_var):
-		print " Successed."
+		print(" Successed.")
 	else:
-		print " Failed."
-
-if __name__ == '__main__':
-	print 0
+		print(" Failed.")
 

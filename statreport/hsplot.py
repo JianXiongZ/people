@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 from statlogging import readlog
 from readconfig import readconfig
 
@@ -11,6 +12,7 @@ import numpy as np
 import datetime
 import re
 import os
+import sys
 
 def readhs(time0,cfg):
 	deltaT = datetime.timedelta(hours=25)
@@ -25,7 +27,7 @@ def readhs(time0,cfg):
 			if logtime + deltaT < time0:
 				break
 	if len(xmllog) < 3:
-		print "More log files are needed for plotting."
+		print("More log files are needed for plotting.")
 		raise NameError
 
 	#read hash num & elapsed time into $h[time point(0:)][miner No][]
@@ -39,7 +41,6 @@ def readhs(time0,cfg):
 	vps = []
 
 	(data,time,sum_pool_rate,pool_rate) = readlog(cfg['General']['log_dir'],xmllog[0])
-	#(data,time) = readlog(cfg['General']['log_dir'],xmllog[0])
 	ht=[]
 	for i in range(0,len(data)):
 		if data[i][1] == "Alive":
@@ -51,11 +52,10 @@ def readhs(time0,cfg):
 
 	for k in range(1,len(xmllog)):
 		(data,time,sum_pool_rate,pool_rate) = readlog(cfg['General']['log_dir'],xmllog[k])
-		#(data,time) = readlog(cfg['General']['log_dir'],xmllog[k])
 		tt = (time-time0).total_seconds()
 		ht=[]
 		vt=[]
-		print xmllog[k]
+		print(xmllog[k])
 		for i in range(0,len(data)):
 			if data[i][1] == "Dead":
 				vt.append(0)
@@ -82,13 +82,14 @@ def readhs(time0,cfg):
 def hsplot(time0,cfg):
 
 
-	print "Reading Logs: "
+	print("Reading Logs: ")
 	try:
 		(t,h,v,vp,vps) = readhs(time0,cfg)
-		#(t,h,v) = readhs(time0,cfg)
 	except NameError:
 		return 1
-	print "Done.\nPlotting into " + cfg['HSplot']['img_dir'] + "hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png ... ",
+	print("Done.\nPlotting into " + cfg['HSplot']['img_dir'] + "hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png ... ",end="")
+	sys.stdout.flush()
+
 	#total hash speed
 	vm = []
 	for k in range(0,len(v)):
@@ -101,7 +102,6 @@ def hsplot(time0,cfg):
 	y2 = np.array(vp)
 	y3 = np.array(vps)
 	ymax = np.amax(np.hstack((y1,y2,y3)))
-	ymax = np.amax(y1)
 
 	f1 = interp1d(x, y1)
 	f2 = interp1d(x, y2)
@@ -117,10 +117,10 @@ def hsplot(time0,cfg):
 		 }
 	ticks_font = matplotlib.font_manager.FontProperties(family=cfg['HSplot']['font_family2'], style='normal', size=int(cfg['HSplot']['font_size2']), weight='normal', stretch='normal')
 
-	p1, = plt.plot(xnew,f1(xnew),'r-')
+	p1, = plt.plot(xnew,f1(xnew),'b-')
 	p2, = plt.plot(xnew,f2(xnew),'g-')
-	p3, = plt.plot(xnew,f3(xnew),'b-')
-	plt.legend((p1,p2,p3),('Local','Sum Workers','Worker'), loc = 0, prop = ticks_font)
+	p3, = plt.plot(xnew,f3(xnew),'r-')
+	plt.legend((p1,p2,p3),('Local','Worker','Pool'), loc = 2, prop = ticks_font)
 	# x axis tick label
 	xticklabel = []
 	xmax = time0 - datetime.timedelta(seconds = (time0.hour - (time0.hour/2)*2)*3600 + time0.minute*60)
@@ -185,7 +185,7 @@ def hsplot(time0,cfg):
 
 
 	plt.savefig(cfg['HSplot']['img_dir'] + "hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png")
-	print "Done."
+	print("Done.")
 	plt.clf()
 	return "hs-"+time0.strftime("%Y_%m_%d_%H_%M")+".png"
 

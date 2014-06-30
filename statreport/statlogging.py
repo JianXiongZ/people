@@ -1,14 +1,17 @@
 #!/usr/bin/env python
+from __future__ import print_function
 from xml.dom.minidom import parse
 import xml.dom.minidom
 import datetime
 import os
+import sys
 from poolrate import poolrate
 
 def writelog(data,cfg,filename):
 	## write XML log file
 	logdir = cfg['General']['log_dir']
-	print 'Logging into ' + logdir + filename + ' ... ',
+	print('Logging into ' + logdir + filename + ' ... ',end="")
+	sys.stdout.flush()
 	log = '<?xml version="1.0"?>\n'
 	time = filename.strip("log-").strip(".xml")
 	log += "<data>\n\t<time>" + time + "</time>\n"
@@ -44,7 +47,7 @@ def writelog(data,cfg,filename):
 	logfile = open(logdir + filename, 'w')
 	logfile.write(log)
 	logfile.close()
-	print 'Done.'
+	print('Done.')
 
 def readlog(logdir,filename):
 	## read XML log file
@@ -93,7 +96,6 @@ def readlog(logdir,filename):
 		data.append(miner)
 
 	return (data,time,sum_pool_rate,pool_rate)
-	#return (data,time)
 
 if __name__ == '__main__':
 	logdir = './log/'
@@ -101,23 +103,23 @@ if __name__ == '__main__':
 	(data,time) = readlog(logdir,logname)
 
 	for miner in data:
-		print miner[0] + ': ' + miner[1] + ' ' + miner[2] + ' ' + miner[3]
+		print(miner[0] + ': ' + miner[1] + ' ' + miner[2] + ' ' + miner[3])
 		i = 1
 		for dev_stat in miner[4]:
-			print '\tModule #' + str(i) + ':'
-			print '\t\tDevice Elapsed: ' + dev_stat[0]
-			print '\t\tTotal MH: ' + dev_stat[1]
-			print '\t\tTemperature: ' + dev_stat[2]
-			print '\t\tModules Number: ' + str(dev_stat[3])
-			print '\t\tTemperature List: ' + ','.join(dev_stat[4])
-			print '\t\tFan Speed List: ' + ','.join(dev_stat[5])
+			print('\tModule #' + str(i) + ':')
+			print('\t\tDevice Elapsed: ' + dev_stat[0])
+			print('\t\tTotal MH: ' + dev_stat[1])
+			print('\t\tTemperature: ' + dev_stat[2])
+			print('\t\tModules Number: ' + str(dev_stat[3]))
+			print('\t\tTemperature List: ' + ','.join(dev_stat[4]))
+			print('\t\tFan Speed List: ' + ','.join(dev_stat[5]))
 			i += 1
 
 		i = 1
 		for pool_stat in miner[5]:
-			print '\tPool #' + str(i) + ':'
-			print '\t\tURL: ' + pool_stat[0]
-			print '\t\tStatus: ' + pool_stat[1]
+			print('\tPool #' + str(i) + ':')
+			print('\t\tURL: ' + pool_stat[0])
+			print('\t\tStatus: ' + pool_stat[1])
 			i += 1
-		print "------------------------------------------------------------------------------"
+		print("------------------------------------------------------------------------------")
 

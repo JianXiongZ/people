@@ -7,6 +7,24 @@ import hashlib
 import hmac
 import time
 
+def getjs(poolcfg,url):
+	i = 0
+	while i < int(poolcfg['retry']):
+		try:
+			nonce = '{:.0f}'.format(time.time()*1000)
+			signature = hmac.new(poolcfg['api_secret_key'], msg = nonce + poolcfg['username'] + poolcfg['api_key'], digestmod=hashlib.sha256).hexdigest().upper()
+			post_content = { 'key': poolcfg['api_key'], 'signature': signature, 'nonce': nonce}
+			param = urllib.urlencode(post_content)
+			request = urllib2.Request(url, param, {'User-agent': 'bot-cex.io-' + poolcfg['username']})
+			js = urllib2.urlopen(request).read()
+			return json.loads(js)
+		except Exception, e:
+			print(str(e))
+			time.sleep(1)
+			i += 1
+	return 0
+
+
 def poolrate(cfg):
 	url1 = 'https://cex.io/api/ghash.io/hashrate'
 	url2 = 'https://cex.io/api/ghash.io/workers'
@@ -15,21 +33,20 @@ def poolrate(cfg):
 	opener = urllib2.build_opener(proxy_handler)
 	urllib2.install_opener(opener)
 
-	try:
-		key = cfg['Pool']['api_key']
-		nonce = '{:.0f}'.format(time.time()*1000)
-		signature = hmac.new(cfg['Pool']['api_secret_key'], msg = nonce + cfg['Pool']['username'] + key, digestmod=hashlib.sha256).hexdigest().upper()
-		post_content = { 'key': key, 'signature': signature, 'nonce': nonce}
+	dict1 = getjs(cfg['Pool'],url1)
+	if dict1 == 0:
+		hs1 = '0'
+	else:
+		hs1 = str(dict1['last1h'])
+	time.sleep(1)
 
-		param = urllib.urlencode(post_content)
+	dict2 = getjs(cfg['Pool'],url2)
+	if dict2 == 0:
+		hs2 = '0'
+	else:
+		try:
+			hs2 = str(dict2[cfg['Pool']['username']+'.'+cfg['Pool']['workername']]['last1h'])
+		except KeyError:
+			hs2 = '0'
+	return (hs1,hs2)
 
-		request1 = urllib2.Request(url1, param, {'User-agent': 'bot-cex.io-' + cfg['Pool']['username']})
-		js1 = urllib2.urlopen(request1).read()
-		dict1 = json.loads(js1)
-		request2 = urllib2.Request(url2, param, {'User-agent': 'bot-cex.io-' + cfg['Pool']['username']})
-		result2 = urllib2.urlopen(request2).read()
-		dict2 = json.loads(js2)
-
-		return (dict1['last1h'],dict2[cfg['Pool']['workername']]['last1h'])
-	except:
-		return ('0','0')
