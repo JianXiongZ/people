@@ -126,9 +126,18 @@ def chkstat(cfg):
 			miner.append([])
 			miner.append([])
 			miner.append('0')
+			miner.append('8')
 		else:
 			dev = []
 			pool = []
+
+			## error list:
+			## 1000 unenble to connect to port 4028
+			## 0100 alive module num less than 75 percent
+			## 0010 some module's temperature gets 255
+			## 0001 some moduls's temperature is higher than 80
+			error = 0
+
 			try:
 				for dd in data0[1][i]['DEVS']:
 					dev_stat = []
@@ -140,31 +149,49 @@ def chkstat(cfg):
 				pass
 			j = 0
 
+
+			sum_mn = 0
 			try:
 				for sd in data0[2][i]['STATS']:
 					if sd['ID'][0:4] == 'POOL':
 						#ignore pool stat in 'stats'
 						break
-
 					mn = 0
 					temp = []
 					fan = []
+
+					err_255 = 0
+					err_temp = 0
+
 					for key in sd:
 						if key[-10:] == 'MM Version':
 							mn += 1
 						elif key[0:11] == 'Temperature':
+							temperature = sd[key]
+							if temperature == 255:
+								err_255 = 1
+							elif temperature >= 80:
+								err_temp = 1
+							else: pass
 							temp.append(str(sd[key]))
 						elif key[0:3] == 'Fan':
 							fan.append(str(sd[key]))
 						else:
 							pass
+					error += err_255 * 2 + err_temp
+
 					dev[j].append(str(mn))
 					dev[j].append(temp)
 					dev[j].append(fan)
 
+					sum_mn += mn
+
 					j += 1
 			except:
 				pass
+
+			if sum_mn < .75 * int(cfg['mod_num_list'][i]):
+				error += 4
 
 			## when will 'devs' & 'stats' return different device numbers?
 			while j < len(dev):
@@ -205,6 +232,8 @@ def chkstat(cfg):
 				miner.append(str(data0[0][i]['SUMMARY'][0]['MHS 15m']))
 			except KeyError:
 				miner.append('0')
+
+			miner.append(str(error))
 
 		data.append(miner)
 		i += 1
