@@ -33,7 +33,7 @@ def apiread(ip,command,lock,retry):
 			response = response.replace('\x00','')
 			s.close()
 			return json.loads(response)
-		except ValueError:
+		except:
 			lock.acquire()
 			print("\033[31mConnection to " + ip + " lost. Extend time-out and try again.\033[0m")
 			lock.release()
@@ -136,7 +136,7 @@ def chkstat(cfg):
 					dev_stat.append(str(dd['Total MH']))
 					dev_stat.append(str(dd['Temperature']))
 					dev.append(dev_stat)
-			except KeyError:
+			except:
 				pass
 			j = 0
 
@@ -163,7 +163,7 @@ def chkstat(cfg):
 					dev[j].append(fan)
 
 					j += 1
-			except KeyError:
+			except:
 				pass
 
 			## when will 'devs' & 'stats' return different device numbers?
@@ -183,19 +183,19 @@ def chkstat(cfg):
 					pool_stat.append(pd['Status'])
 					pool_stat.append(pd['URL'])
 					pool.append(pool_stat)
-			except KeyError:
+			except:
 				pass
 
 			miner.append('Alive')
 
 			try:
 				miner.append(str(data0[0][i]['SUMMARY'][0]['Elapsed']))
-			except KeyError:
+			except:
 				miner.append('0')
 
 			try:
 				miner.append(str(data0[0][i]['SUMMARY'][0]['Total MH']))
-			except KeyError:
+			except:
 				miner.append('0')
 
 			miner.append(dev)
