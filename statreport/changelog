@@ -1,3 +1,9 @@
+2014.07.02 #1
+  Add try-except to chkstat.py 
+
+
+
+
 2014.07.01 #2
   Add T_avg & T_max num to T map.
   Add api data fetch retries.
