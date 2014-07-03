@@ -1,0 +1,4 @@
+update.conf
+*.pyc
+tags
+.directory
