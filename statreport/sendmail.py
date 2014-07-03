@@ -118,14 +118,14 @@ def sendmail(time,data,cfg):
 			error = int(miner[7])
 			error_r = []
 			if error|8 == error:
-				error_r.append('Unable to connect')
+				error_r.append({'msg':'Unable to connect.', 'color':'black'})
 			if error|4 == error:
-				error_r.append('Alive module number too low')
+				error_r.append({'msg':'Alive module number too low.', 'color':'blue'})
 			if error|2 == error:
-				error_r.append('Temperature 255')
+				error_r.append({'msg':'Temperature 255.', 'color':'purple'})
 			if error|1 == error:
-				error_r.append('Overheating')
-			template_var['err_miner_list'].append({'ip':miner[0], 'error':'. '.join(error_r)+'.'})
+				error_r.append({'msg':'Overheating.', 'color':'red'})
+			template_var['err_miner_list'].append({'ip':miner[0], 'error':error_r})
 
 	sum_mod_num = 0
 	for miner in data:
