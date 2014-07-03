@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import telnetlib
-import re
 import sys
 import time
 import threading
@@ -12,7 +11,7 @@ def telnetthread(miner_queue,lock,commands,retry):
 	while True:
 		try:
 			(miner_ip, miner_id) = miner_queue.get(False)
-			time_out = 0
+			time_out = 9
 			while True:
 				time_out += 1
 				tn = telnetlib.Telnet()
@@ -39,7 +38,7 @@ def telnetthread(miner_queue,lock,commands,retry):
 					tn.read_until('root@OpenWrt:/# ')
 					for c in commands:
 						tn.write(c + '\n')
-						tn.read_until('root@OpenWrt:/# ',10)
+						tn.read_until('root@OpenWrt:/# ')
 					tn.write('exit\n')
 					tn.read_all()
 				except:
@@ -61,8 +60,10 @@ def telnetthread(miner_queue,lock,commands,retry):
 
 if __name__ == '__main__':
 
-	cfg = readconfig('./update.conf')
-
+	if len(sys.argv) < 1:
+		cfg = readconfig('./update.conf')
+	else:
+		cfg = readconfig(sys.argv[1])
 	miner_queue = Queue.Queue()
 	lock = threading.Lock()
 	for i in range(0,len(cfg['Telnet']['miner_list'])):
