@@ -7,20 +7,18 @@ import threading
 import Queue
 from readconfig import readconfig
 
-def telnetthread(miner_queue,lock,commands,retry):
+def telnetthread(miner_queue,lock,commands,retry,flag):
 	while True:
 		try:
 			(miner_ip, miner_id) = miner_queue.get(False)
-			time_out = 9
-			while True:
-				time_out += 1
+			for i in range(0,retry):
 				tn = telnetlib.Telnet()
 
 				err_conn_flag = False
 				for k in range(0,retry):
 					## try connecting for some times
 					try:
-						tn.open( miner_ip,23, time_out )
+						tn.open( miner_ip,23)
 						break
 					except:
 						tn.close()
@@ -35,10 +33,10 @@ def telnetthread(miner_queue,lock,commands,retry):
 					break
 
 				try:
-					tn.read_until('root@OpenWrt:/# ')
+					tn.read_until(flag)
 					for c in commands:
 						tn.write(c + '\n')
-						tn.read_until('root@OpenWrt:/# ')
+						tn.read_until(flag)
 					tn.write('exit\n')
 					tn.read_all()
 				except:
@@ -71,7 +69,7 @@ if __name__ == '__main__':
 
 	threads = []
 	for i in range(0,int(cfg['Telnet']['threads_num'])):
-		threads.append(threading.Thread( target=telnetthread, args=( miner_queue, lock,cfg['Telnet']['commands'], int(cfg['Telnet']['retry']), ) ))
+		threads.append(threading.Thread( target=telnetthread, args=( miner_queue, lock,cfg['Telnet']['commands'], int(cfg['Telnet']['retry']), cfg['Telnet']['flag']) ))
 	for t in threads:
 		t.start()
 	for t in threads:
