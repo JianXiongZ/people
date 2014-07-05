@@ -83,7 +83,7 @@ def sendmail(time,data,cfg):
 		fail = 1
 		while retry < int(cfg['Pool']['retry']):
 			try:
-				s = urllib2.urlopen(url).read()
+				s = urllib2.urlopen(url,timeout=10).read()
 				balance = s.split('Final Balance')[1].split(' BTC')[0].split('>')[-1]
 				b += float(balance)
 				fail = 0
