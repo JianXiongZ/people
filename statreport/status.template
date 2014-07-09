@@ -1,0 +1,61 @@
+<html>
+<link rel="stylesheet" href="css/bootstrap.min.css">
+<link rel="stylesheet" href="css/style.css" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/comm.js"></script>
+<body>
+	<div class="row">
+		<!--Left Start-->
+		<div class="col-md-6">
+			<div class="jumbotron">
+				<h2>Generated at {{ time }}</h2>
+				<a href="#" class="thumbnail">
+					<img data-src="images/fox2.png" src="images/fox2.png" alt="...">
+				</a>
+			</div>
+		</div>
+		<!--Left End-->
+		<!--Right Start-->
+		<div class="col-md-6">
+			<div class="jumbotron">
+				<h3><strong>Active IP</strong>:     {{ active_ip_num }}</h2>
+				<h3><strong>Alive Modules</strong>:     {{ alive_mod_num }}</h2>
+				<h3>Error List:</h3>
+					<table class="table table-bordered table-striped">
+						<thead>
+							<tr>
+								<td><strong>IP</strong></td>
+								<td><strong>Error</strong></td>
+							</tr>
+						</thead>
+						<tbody>
+							{% for err_miner in err_miner_list %}
+							<tr>
+								<td>{{ err_miner.ip }}</td>
+								<td>
+									{% for err in err_miner.error %}
+									<font color="{{ err.color }}">{{ err.msg }}</font>
+									{% endfor %}
+								</td>
+							</tr>
+							{% empty %}
+							<tr>
+								<td>None</td>
+								<td>None</td>
+							</tr>
+							{% endfor %} 
+						</tbody>
+					</table>
+			</div>
+				<div class="jumbotron">
+					<a href="#" class="thumbnail">
+						<img data-src="images/fox1.png" src="images/fox1.png" alt="...">
+					</a>
+				</div>
+		</div>
+		<!--Right end-->
+	</div>
+</body>
+</html>
