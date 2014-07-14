@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
 	if args.hsplot:
 		if args.nolog:
-			hashrate = chkrate(None,None,cfg,time_now)
+			hashrate = chkrate(None,None,cfg,time_now,time_old)
 		hspng = hsplot(hashrate,cfg,time_now)
 		if hspng != 1:
 			cfg['Email']['hsimg_dir'] = cfg['HSplot']['img_dir']
