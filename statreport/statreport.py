@@ -7,6 +7,8 @@ from hsplot import hsplot
 from readconfig import readconfig
 from tmplot import tmplot
 from renderpage import renderpage
+from chkerr import chkerr
+from chkrate import chkrate
 import datetime
 import argparse
 import os
@@ -30,22 +32,33 @@ if __name__ == '__main__':
 
 	time_now = datetime.datetime.now()
 
+
+	data0 = None
+	time_old = None
+	for logfile in sorted(os.listdir(cfg['General']['log_dir']),reverse=True):
+		if re.match(r'log-(\d+_){4}\d+\.xml',logfile):
+			(data0 , time_old) = readlog(cfg['General']['log_dir'], logfile)
+			break
+
 	if not args.nolog:
 		data = chkstat(cfg)
+		hashrate = chkrate(data,data0,cfg,time_now,time_old)
+		err = chkerr(data,cfg,time_now)
 		writelog(data,cfg,"log-" + time_now.strftime("%Y_%m_%d_%H_%M") + ".xml")
 
 	if args.hsplot:
-		hspng = hsplot(time_now,cfg)
+		if args.nolog:
+			hashrate = chkrate(None,None,cfg,time_now)
+		hspng = hsplot(hashrate,cfg,time_now)
 		if hspng != 1:
 			cfg['Email']['hsimg_dir'] = cfg['HSplot']['img_dir']
 			cfg['Email']['hsimg'] = hspng
 
 	if args.webpage or args.email or args.tmplot:
 		if args.nolog:
-			for logfile in sorted(os.listdir(cfg['General']['log_dir']),reverse=True):
-				if re.match(r'log-(\d+_){4}\d+\.xml',logfile):
-					(data , time_now, vps, vp) = readlog(cfg['General']['log_dir'], logfile)
-					break
+			data = data0
+			time_now = time_old
+			err = chkerr(data,cfg,time_now)
 
 	if args.tmplot:
 		tmpng = tmplot(time_now,data,cfg)
@@ -53,7 +66,7 @@ if __name__ == '__main__':
 		cfg['Email']['tmimg'] = tmpng
 
 	if args.webpage:
-		renderpage(time_now,data,cfg)
+		renderpage(time_now,data,err,cfg)
 	if args.email:
-		sendmail(time_now.strftime("%Y-%m-%d %H:%M"),data,cfg)
+		sendmail(time_now.strftime("%Y-%m-%d %H:%M"),data,err,cfg)
 

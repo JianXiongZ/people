@@ -11,6 +11,8 @@
 		<div class="col-md-6">
 			<div class="jumbotron">
 				<h2>Generated at {{ time }}</h2>
+			</div>
+			<div class="jumbotron">
 				<a href="#" class="thumbnail">
 					<img data-src="images/fox2.png" src="images/fox2.png" alt="...">
 				</a>
@@ -33,7 +35,7 @@
 						<tbody>
 							{% for err_miner in err_miner_list %}
 							<tr>
-								<td>{{ err_miner.ip }}</td>
+								<td>{{ err_miner.id }}</td>
 								<td>
 									{% for err in err_miner.error %}
 									<font color="{{ err.color }}">{{ err.msg }}</font>
