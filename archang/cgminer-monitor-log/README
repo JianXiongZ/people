@@ -1,7 +1,8 @@
 On echo RPi, set server ip in /etc/config/cgminer:
     uci set cgminer.default.server=192.168.1.3
     uci commit
-And upload cgminer-monitor to /usr/bin/cgminer-monitor
+And upload cgminer-monitor to /usr/bin/cgminer-monitor,
+ cgminer.init to /etc/init.d/cgminer
 
 On server, install rsyslog, edit /etc/rsyslogd.conf:
     
