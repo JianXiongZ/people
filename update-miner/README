@@ -1,6 +1,0 @@
-Usage: 
-   update-miner.py [CONFIG-FILE]
-
-Multithreaded running some shell commands on miners.
-Default cfg file: ./update.conf
-

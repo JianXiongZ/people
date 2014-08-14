@@ -1,0 +1,59 @@
+#!/bin/sh
+# This file is for cron job
+
+SERVER=`uci get cgminer.default.server`
+IP=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
+NOW_U=`date +%s`
+# Make sure there is only one cgminer running
+C=`pidof cgminer | wc -w`
+if [ "$C" != "1" ]; then
+    killall -s 9 cgminer
+    sleep 1
+    /etc/init.d/cgminer restart
+    echo "<14>$IP [cgminer][s0]: Restart due to none or many cgminer running"| nc $SERVER 514
+    while [ `pidof cgminer | wc -w` != "1" ]; do sleep 1 ; done
+    DUR=$((`date +%s`-$NOW_U))
+    echo "<14>$IP [cgminer][r0][$DUR]: Restart completed" | nc $SERVER 514
+    exit 0;
+fi
+
+# Make sure the devices staill active
+B=`cgminer-api devs | grep "^   \[Last Valid Work\]"`
+if [ "$?" != "0" ]; then
+    killall -s 9 cgminer
+    sleep 1
+    /etc/init.d/cgminer restart
+    echo "<14>$IP [cgminer][s1]: Restart due to unactive devices situation 1"| nc $SERVER 514
+    while [ `pidof cgminer | wc -w` != "1" ]; do sleep 1 ; done
+    DUR=$((`date +%s`-$NOW_U))
+    echo "<14>$IP [cgminer][r1][$DUR]: Restart completed" | nc $SERVER 514
+    exit 0;
+fi
+
+A=`cat /tmp/cm.log`
+echo -n "$B" > /tmp/cm.log
+if [ "$A" == "$B" ]; then
+    killall -s 9 cgminer
+    sleep 1
+    /etc/init.d/cgminer restart
+    echo "<14>$IP [cgminer][s2]: Restart due to unactive devices situation 2" | nc $SERVER 514
+    while [ `pidof cgminer | wc -w` != "1" ]; do sleep 1 ; done
+    DUR=$((`date +%s`-$NOW_U))
+    echo "<14>$IP [cgminer][r2][$DUR]: Restart completed" | nc $SERVER 514
+    exit 0;
+fi
+
+# If there new device added, restart cgminer
+B=`find /dev/ -name "ttyUSB*" | wc -l`
+A=`cat /tmp/usbnr.log`
+echo -n "$B" > /tmp/usbnr.log
+if [ "$A" != "$B" ]; then
+    killall -s 9 cgminer
+    sleep 1
+    /etc/init.d/cgminer restart
+    echo "<14>$IP [cgminer][s3]: Restart due to new device(s) added" | nc $SERVER 514
+    while [ `pidof cgminer | wc -w` != "1" ]; do sleep 1 ; done
+    DUR=$((`date +%s`-$NOW_U))
+    echo "<14>$IP [cgminer][r3][$DUR]: Restart completed" | nc $SERVER 514
+    exit 0;
+fi
