@@ -87,7 +87,7 @@ stop() {
         SERVER=`uci get cgminer.default.server`
         IP=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
         INFO=`cgminer-api -o summary | tr ',' '\n' | grep ^[\(Elapsed\)\(Total\)] | tr '\n' ',' | sed 's/,$//'`
-        echo "<14>$IP [cgminer][api]: $INFO" | nc $SERVER 514
+        [ -z "$INFO" ] || echo "<14>$IP [cgminer][api]: $INFO" | nc $SERVER 514
         start-stop-daemon -K -n $APP -p $PID_FILE -s TERM
 }
 
