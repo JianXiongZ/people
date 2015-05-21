@@ -1,0 +1,25 @@
+diff --git a/firmware/main.c b/firmware/main.c
+index a37629a..ad207d2 100644
+--- a/firmware/main.c
++++ b/firmware/main.c
+@@ -173,6 +173,8 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
+ 		memcpy(data + AVA4_MM_DNA_LEN, buf, len); /* MM_VERSION */
+ 		break;
+ 	case AVA4_P_NONCE:
++		p[3] = (g_dna[0] ^ g_dna[AVA4_MM_DNA_LEN - 1]);
++		memcpy(data, buf, len);
+ 	case AVA4_P_TEST_RET:
+ 		memcpy(data, buf, len);
+ 		break;
+@@ -477,7 +479,10 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
+ 		break;
+ 
+ 	case AVA4_P_POLLING:
+-		polling();
++		if (opt == (g_dna[0] ^ g_dna[AVA4_MM_DNA_LEN - 1]))
++			polling();
++		else
++			send_pkg(AVA4_P_STATUS, NULL, 0, 0);
+ 
+ 		memcpy(&tmp, data, 4);
+ 		g_led_blinking = tmp;
