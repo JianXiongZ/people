@@ -1,0 +1,22 @@
+diff --git a/driver-avalon4.c b/driver-avalon4.c
+index ca0e004..913c5fd 100644
+--- a/driver-avalon4.c
++++ b/driver-avalon4.c
+@@ -456,7 +456,8 @@ static int decode_pkg(struct thr_info *thr, struct avalon4_ret *ar, int modular_
+ 			info->chipmatching_work[modular_id][miner][chip_id]++;
+ 		}
+ 
+-		submit_nonce2_nonce(thr, pool, real_pool, nonce2, nonce, ntime);
++		if ((info->mm_dna[modular_id][0] ^ info->mm_dna[modular_id][AVA4_MM_DNA_LEN - 1]) == ar->opt)
++			submit_nonce2_nonce(thr, pool, real_pool, nonce2, nonce, ntime);
+ 		break;
+ 	case AVA4_P_STATUS:
+ 		applog(LOG_DEBUG, "%s-%d-%d: AVA4_P_STATUS", avalon4->drv->name, avalon4->device_id, modular_id);
+@@ -1161,6 +1162,7 @@ static int polling(struct thr_info *thr, struct cgpu_info *avalon4, struct avalo
+ 		}
+ 
+ 		avalon4_init_pkg(&send_pkg, AVA4_P_POLLING, 1, 1);
++		send_pkg.opt = info->mm_dna[i][0] ^ info->mm_dna[i][AVA4_MM_DNA_LEN - 1];
+ 		ret = avalon4_iic_xfer_pkg(avalon4, i, &send_pkg, &ar);
+ 		if (ret == AVA4_SEND_OK)
+ 			decode_err =  decode_pkg(thr, &ar, i);
