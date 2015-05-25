@@ -1,0 +1,96 @@
+From 3af14291571a8b8950513faf481dd2ee813342e3 Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Mon, 25 May 2015 18:57:11 +0800
+Subject: [PATCH] Support rolling test
+
+---
+ f2pool.cfg |  3 +++
+ pyminer.py | 34 +++++++++++++++++++++++++++++-----
+ 2 files changed, 32 insertions(+), 5 deletions(-)
+
+diff --git a/f2pool.cfg b/f2pool.cfg
+index 334a0f3..c09c68d 100644
+--- a/f2pool.cfg
++++ b/f2pool.cfg
+@@ -29,3 +29,6 @@ hashmeter=1
+ 
+ # verbose
+ verbose=0
++
++# rolling
++rolling=0
+diff --git a/pyminer.py b/pyminer.py
+index 9980f8f..5f70b0d 100755
+--- a/pyminer.py
++++ b/pyminer.py
+@@ -123,10 +123,9 @@ class Miner:
+ 		    print "Find an Avalon nano"
+ 
+ 	    try:
+-		    if usbdev.is_kernel_driver_active(0) is True:
+-			    usbdev.detach_kernel_driver(0)
+-	    except:
+-		    print "detach kernel driver failed"
++		    usbdev.detach_kernel_driver(0)
++	    except usb.core.USBError as e:
++		    print ("detach kernel driver failed: %s" % str(e))
+ 
+ 	    try:
+ 		    # usbdev[iConfiguration][(bInterfaceNumber,bAlternateSetting)]
+@@ -280,6 +279,22 @@ class Miner:
+ 		result = rpc.getwork(param_arr)
+ 		print time.asctime(), "--> Upstream RPC result:", result
+ 
++	def rolling_work(self, data):
++		static_data = data.decode('hex')
++		static_data = bufreverse(static_data)
++
++		ntime = binascii.hexlify(static_data[68:72])
++		ntime = bytereverse(int(ntime, 16))
++		ntime = ntime + 1
++
++		ntime = bytereverse(ntime)
++		static_data = static_data[:68].encode('hex') + hex(ntime)[2:10].rjust(8, '0') + static_data[72:].encode('hex')
++		static_data = static_data.decode('hex')
++		static_data = bufreverse(static_data)
++
++		data = static_data.encode('hex')
++		return data
++
+ 	def iterate(self, rpc):
+ 		work = rpc.getwork()
+ 		if work is None:
+@@ -291,6 +306,12 @@ class Miner:
+ 
+ 		time_start = time.time()
+ 
++		if settings['rolling']:
++			while True:
++			    work['data'] = self.rolling_work(work['data'])
++			    (hashes_done, nonce_bin) = self.work(work['data'],
++								work['target'])
++
+                 (hashes_done, nonce_bin) = self.work(work['data'],
+                                                       work['target'])
+ 
+@@ -354,13 +375,16 @@ if __name__ == '__main__':
+ 		sys.exit(1)
+         if 'verbose' not in settings:
+                 settings['verbose'] = 0
++	if 'rolling' not in settings:
++		settings['rolling'] = 0
+ 
+ 	settings['port'] = int(settings['port'])
+         # TODO: Support multithread
+ 	settings['threads'] = 1;
+ 	settings['hashmeter'] = int(settings['hashmeter'])
+ 	settings['scantime'] = long(settings['scantime'])
+-        settings['verbose'] = int(settings['verbose'])
++	settings['verbose'] = int(settings['verbose'])
++	settings['rolling'] = int(settings['rolling'])
+ 
+ 	thr_list = []
+ 	nano_vid = 0x29f1
+-- 
+2.0.0
+
