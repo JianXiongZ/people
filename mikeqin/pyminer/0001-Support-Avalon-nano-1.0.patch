@@ -1,0 +1,348 @@
+From 68ae46cf89cae93afc1d09cd7b2c32c0166d4681 Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Fri, 10 Apr 2015 18:26:45 +0800
+Subject: [PATCH 1/4] Support Avalon nano 1.0
+
+---
+ example-config.cfg |   7 ++-
+ midstate.py        | 108 +++++++++++++++++++++++++++++++++++++++++++++
+ pyminer.py         | 125 +++++++++++++++++++++++++++++++----------------------
+ 3 files changed, 186 insertions(+), 54 deletions(-)
+ create mode 100644 midstate.py
+
+diff --git a/example-config.cfg b/example-config.cfg
+index 103e7c1..78228e9 100644
+--- a/example-config.cfg
++++ b/example-config.cfg
+@@ -12,8 +12,7 @@ rpcpass=mypass
+ #
+ # mining details
+ #
+-
+-threads=4
++threads=1
+ 
+ # periodic rate for requesting new work, if solution not found
+ scantime=60
+@@ -29,4 +28,8 @@ logdir=/tmp/pyminer
+ # set to 1, to enable hashmeter output
+ hashmeter=0
+ 
++# set Avalon nano tty device id
++tty=/dev/ttyACM0
+ 
++# verbose
++verbose=0
+diff --git a/midstate.py b/midstate.py
+new file mode 100644
+index 0000000..b6a4cc7
+--- /dev/null
++++ b/midstate.py
+@@ -0,0 +1,108 @@
++# Copyright (C) 2011 by jedi95 <jedi95@gmail.com> and
++#                       CFSworks <CFSworks@gmail.com>
++#
++# Permission is hereby granted, free of charge, to any person obtaining a copy
++# of this software and associated documentation files (the "Software"), to deal
++# in the Software without restriction, including without limitation the rights
++# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++# copies of the Software, and to permit persons to whom the Software is
++# furnished to do so, subject to the following conditions:
++#
++# The above copyright notice and this permission notice shall be included in
++# all copies or substantial portions of the Software.
++#
++# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++# THE SOFTWARE.
++
++import struct
++
++# Some SHA-256 constants...
++K = [
++     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
++     0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
++     0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
++     0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
++     0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147,
++     0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
++     0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
++     0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
++     0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a,
++     0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
++     0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
++    ]
++
++A0 = 0x6a09e667
++B0 = 0xbb67ae85
++C0 = 0x3c6ef372
++D0 = 0xa54ff53a
++E0 = 0x510e527f
++F0 = 0x9b05688c
++G0 = 0x1f83d9ab
++H0 = 0x5be0cd19
++
++def rotateright(i,p):
++    """i>>>p"""
++    p &= 0x1F # p mod 32
++    return i>>p | ((i<<(32-p)) & 0xFFFFFFFF)
++
++def addu32(*i):
++    return sum(list(i))&0xFFFFFFFF
++
++def calculateMidstate(data, state=None, rounds=None):
++    """Given a 512-bit (64-byte) block of (little-endian byteswapped) data,
++    calculate a Bitcoin-style midstate. (That is, if SHA-256 were little-endian
++    and only hashed the first block of input.)
++    """
++    if len(data) != 64:
++        raise ValueError('data must be 64 bytes long')
++
++    w = list(struct.unpack('<IIIIIIIIIIIIIIII', data))
++
++    if state is not None:
++        if len(state) != 32:
++            raise ValueError('state must be 32 bytes long')
++        a,b,c,d,e,f,g,h = struct.unpack('<IIIIIIII', state)
++    else:
++        a = A0
++        b = B0
++        c = C0
++        d = D0
++        e = E0
++        f = F0
++        g = G0
++        h = H0
++
++    consts = K if rounds is None else K[:rounds]
++    for k in consts:
++        s0 = rotateright(a,2) ^ rotateright(a,13) ^ rotateright(a,22)
++        s1 = rotateright(e,6) ^ rotateright(e,11) ^ rotateright(e,25)
++        ma = (a&b) ^ (a&c) ^ (b&c)
++        ch = (e&f) ^ ((~e)&g)
++
++        h = addu32(h,w[0],k,ch,s1)
++        d = addu32(d,h)
++        h = addu32(h,ma,s0)
++
++        a,b,c,d,e,f,g,h = h,a,b,c,d,e,f,g
++
++        s0 = rotateright(w[1],7) ^ rotateright(w[1],18) ^ (w[1] >> 3)
++        s1 = rotateright(w[14],17) ^ rotateright(w[14],19) ^ (w[14] >> 10)
++        w.append(addu32(w[0], s0, w[9], s1))
++        w.pop(0)
++
++    if rounds is None:
++        a = addu32(a, A0)
++        b = addu32(b, B0)
++        c = addu32(c, C0)
++        d = addu32(d, D0)
++        e = addu32(e, E0)
++        f = addu32(f, F0)
++        g = addu32(g, G0)
++        h = addu32(h, H0)
++
++    return struct.pack('<IIIIIIII', a, b, c, d, e, f, g, h)
+diff --git a/pyminer.py b/pyminer.py
+index b6d4bdb..05a44a8 100755
+--- a/pyminer.py
++++ b/pyminer.py
+@@ -1,5 +1,6 @@
+ #!/usr/bin/python
+ #
++# Copyright 2015 Mikeqin Fengling.Qin@gmail.com
+ # Copyright 2011 Jeff Garzik
+ #
+ # This program is free software; you can redistribute it and/or modify
+@@ -25,10 +26,11 @@ import re
+ import base64
+ import httplib
+ import sys
++from serial import Serial
+ from multiprocessing import Process
++from midstate import calculateMidstate
+ 
+ ERR_SLEEP = 15
+-MAX_NONCE = 1000000L
+ 
+ settings = {}
+ pp = pprint.PrettyPrinter(indent=4)
+@@ -97,9 +99,9 @@ def wordreverse(in_buf):
+ 	return ''.join(out_words)
+ 
+ class Miner:
+-	def __init__(self, id):
++	def __init__(self, id, tty):
+ 		self.id = id
+-		self.max_nonce = MAX_NONCE
++                self.ser = Serial(tty, 57600, 8, timeout=2) # 2 second
+ 
+ 	def work(self, datastr, targetstr):
+ 		# decode work data hex string to binary
+@@ -119,41 +121,59 @@ class Miner:
+ 		static_hash = hashlib.sha256()
+ 		static_hash.update(blk_hdr)
+ 
+-		for nonce in xrange(self.max_nonce):
+-
+-			# encode 32-bit nonce value
+-			nonce_bin = struct.pack("<I", nonce)
+-
+-			# hash final 4b, the nonce value
+-			hash1_o = static_hash.copy()
+-			hash1_o.update(nonce_bin)
+-			hash1 = hash1_o.digest()
+-
+-			# sha256 hash of sha256 hash
+-			hash_o = hashlib.sha256()
+-			hash_o.update(hash1)
+-			hash = hash_o.digest()
+-
+-			# quick test for winning solution: high 32 bits zero?
+-			if hash[-4:] != '\0\0\0\0':
+-				continue
+-
+-			# convert binary hash to 256-bit Python long
+-			hash = bufreverse(hash)
+-			hash = wordreverse(hash)
+-
+-			hash_str = hash.encode('hex')
+-			l = long(hash_str, 16)
+-
+-			# proof-of-work test:  hash < target
+-			if l < target:
+-				print time.asctime(), "PROOF-OF-WORK found: %064x" % (l,)
+-				return (nonce + 1, nonce_bin)
+-			else:
+-				print time.asctime(), "PROOF-OF-WORK false positive %064x" % (l,)
+-#				return (nonce + 1, nonce_bin)
+-
+-		return (nonce + 1, None)
++                # calculate midstate
++                midstate_bin = calculateMidstate(datastr.decode('hex')[:64])
++
++                # send task to Avalon nano
++                icarus_bin = midstate_bin[::-1] + '0'.rjust(40, '0').decode('hex') + datastr.decode('hex')[64:76][::-1]
++                if settings['verbose'] == 1:
++                        print 'send task:' + icarus_bin.encode('hex')
++                self.ser.flushInput()
++                self.ser.write(icarus_bin)
++
++                # read nonce back
++                rdata = self.ser.read(100)
++                if rdata.encode('hex')[0:8] == "":
++                        print time.asctime(), "No Nonce found"
++                        return (0xffffffff, None)
++                else:
++                        if settings['verbose'] == 1:
++                                print 'nonce:', rdata.encode('hex')[0:8]
++
++                # encode 32-bit nonce value
++                nonce = int(rdata.encode('hex')[0:8], 16)
++                nonce = bytereverse(nonce)
++                nonce_bin = struct.pack("<I", nonce)
++
++                # hash final 4b, the nonce value
++                hash1_o = static_hash.copy()
++                hash1_o.update(nonce_bin)
++                hash1 = hash1_o.digest()
++
++                # sha256 hash of sha256 hash
++                hash_o = hashlib.sha256()
++                hash_o.update(hash1)
++                hash = hash_o.digest()
++
++                # quick test for winning solution: high 32 bits zero?
++                if hash[-4:] != '\0\0\0\0':
++                        print time.asctime(), "Invalid Nonce"
++                        return (0xffffffff, None)
++
++                # convert binary hash to 256-bit Python long
++                hash = bufreverse(hash)
++                hash = wordreverse(hash)
++
++                hash_str = hash.encode('hex')
++                l = long(hash_str, 16)
++
++                # proof-of-work test:  hash < target
++                if l < target:
++                        print time.asctime(), "PROOF-OF-WORK found: %064x" % (l,)
++                        return (0xffffffff, nonce_bin)
++                else:
++                        print time.asctime(), "PROOF-OF-WORK false positive %064x" % (l,)
++		return (0xffffffff, None)
+ 
+ 	def submit_work(self, rpc, original_data, nonce_bin):
+ 		nonce_bin = bufreverse(nonce_bin)
+@@ -174,21 +194,16 @@ class Miner:
+ 
+ 		time_start = time.time()
+ 
+-		(hashes_done, nonce_bin) = self.work(work['data'],
+-						     work['target'])
++                (hashes_done, nonce_bin) = self.work(work['data'],
++                                                      work['target'])
+ 
+ 		time_end = time.time()
+ 		time_diff = time_end - time_start
+ 
+-		self.max_nonce = long(
+-			(hashes_done * settings['scantime']) / time_diff)
+-		if self.max_nonce > 0xfffffffaL:
+-			self.max_nonce = 0xfffffffaL
+-
+ 		if settings['hashmeter']:
+-			print "HashMeter(%d): %d hashes, %.2f Khash/sec" % (
+-			      self.id, hashes_done,
+-			      (hashes_done / 1000.0) / time_diff)
++			print "HashMeter(%d): %d hashes, %.2f Ghash/sec" % (
++			      self.id, 0xffffffff,
++			      (0xffffffff / 1000000000.0) / time_diff)
+ 
+ 		if nonce_bin is not None:
+ 			self.submit_work(rpc, work['data'], nonce_bin)
+@@ -202,8 +217,8 @@ class Miner:
+ 		while True:
+ 			self.iterate(rpc)
+ 
+-def miner_thread(id):
+-	miner = Miner(id)
++def miner_thread(id, tty):
++	miner = Miner(id, tty)
+ 	miner.loop()
+ 
+ if __name__ == '__main__':
+@@ -235,18 +250,24 @@ if __name__ == '__main__':
+ 		settings['hashmeter'] = 0
+ 	if 'scantime' not in settings:
+ 		settings['scantime'] = 30L
++        if 'tty' not in settings:
++                settings['tty'] = '/dev/ttyACM0'
+ 	if 'rpcuser' not in settings or 'rpcpass' not in settings:
+ 		print "Missing username and/or password in cfg file"
+ 		sys.exit(1)
++        if 'verbose' not in settings:
++                settings['verbose'] = 0
+ 
+ 	settings['port'] = int(settings['port'])
+-	settings['threads'] = int(settings['threads'])
++        # TODO: Support multithread
++	settings['threads'] = 1;
+ 	settings['hashmeter'] = int(settings['hashmeter'])
+ 	settings['scantime'] = long(settings['scantime'])
++        settings['verbose'] = int(settings['verbose'])
+ 
+ 	thr_list = []
+ 	for thr_id in range(settings['threads']):
+-		p = Process(target=miner_thread, args=(thr_id,))
++		p = Process(target=miner_thread, args=(thr_id, settings['tty']))
+ 		p.start()
+ 		thr_list.append(p)
+ 		time.sleep(1)			# stagger threads
+-- 
+2.0.0
+

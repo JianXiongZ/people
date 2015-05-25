@@ -1,0 +1,51 @@
+From e026bfd3896a9ebaa7adc95fa8e55cb042b7100d Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Mon, 25 May 2015 10:44:23 +0800
+Subject: [PATCH 3/4] Display a3218 raw data
+
+---
+ f2pool.cfg | 2 +-
+ pyminer.py | 4 +++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/f2pool.cfg b/f2pool.cfg
+index 9235551..334a0f3 100644
+--- a/f2pool.cfg
++++ b/f2pool.cfg
+@@ -28,4 +28,4 @@ logdir=/tmp/pyminer
+ hashmeter=1
+ 
+ # verbose
+-verbose=1
++verbose=0
+diff --git a/pyminer.py b/pyminer.py
+index f1f10f1..9980f8f 100755
+--- a/pyminer.py
++++ b/pyminer.py
+@@ -230,13 +230,14 @@ class Miner:
+ 			print time.asctime(), "No Nonce found"
+ 			return (0xffffffff, None)
+ 		else:
+-			print 'nonce:', binascii.hexlify(rdata)
+ 			if settings['verbose'] == 1:
+ 				print 'nonce:', binascii.hexlify(rdata)[(DATA_OFFSET + 8) << 1:(DATA_OFFSET + 12) << 1]
+ 
+ 		# encode 32-bit nonce value
+ 		nonce = (rdata[DATA_OFFSET + 8] << 24) | (rdata[DATA_OFFSET + 9] << 16) | (rdata[DATA_OFFSET + 10] << 8) | rdata[DATA_OFFSET + 11]
+ 		nonce = nonce - 0x4000
++		if settings['verbose'] == 1:
++			print 'nonce:', hex(nonce)
+ 		nonce = bytereverse(nonce)
+ 		nonce_bin = struct.pack("<I", nonce)
+ 
+@@ -265,6 +266,7 @@ class Miner:
+ 		# proof-of-work test:  hash < target
+ 		if l < target:
+ 			print time.asctime(), "PROOF-OF-WORK found: %064x" % (l,)
++			print "a3218data:", (midstate_bin[::-1] + datastr.decode('hex')[64:76][::-1] + nonce_bin).encode('hex')
+ 			return (0xffffffff, nonce_bin)
+ 		else:
+ 			print time.asctime(), "PROOF-OF-WORK false positive %064x" % (l,)
+-- 
+2.0.0
+

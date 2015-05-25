@@ -1,0 +1,28 @@
+From 1ff00a0e0b475744410fc83abcda6d41fb353612 Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Mon, 25 May 2015 15:51:30 +0800
+Subject: [PATCH 4/4] Add a filter script
+
+---
+ filter.sh | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+ create mode 100755 filter.sh
+
+diff --git a/filter.sh b/filter.sh
+new file mode 100755
+index 0000000..0130ae4
+--- /dev/null
++++ b/filter.sh
+@@ -0,0 +1,9 @@
++#!/bin/sh
++cat pyminer.log | grep "a3218" | cut -c100- | awk '{
++for (x = 1; x <= length($1); x++) {
++    digit = index("123456789abcdef", substr($1,x,1));
++    number =number * 16 + digit
++}
++
++if (number < 500) print $1
++}'
+-- 
+2.0.0
+

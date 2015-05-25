@@ -1,0 +1,324 @@
+From 4b867caf63047d3588fe7e8251492a8cc34a88c8 Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Mon, 25 May 2015 10:29:45 +0800
+Subject: [PATCH 2/4] Support Avalon nano 2.0
+
+---
+ example-config.cfg |   3 -
+ f2pool.cfg         |  31 ++++++++
+ pyminer.py         | 213 ++++++++++++++++++++++++++++++++++++++---------------
+ 3 files changed, 186 insertions(+), 61 deletions(-)
+ create mode 100644 f2pool.cfg
+
+diff --git a/example-config.cfg b/example-config.cfg
+index 78228e9..931fed3 100644
+--- a/example-config.cfg
++++ b/example-config.cfg
+@@ -28,8 +28,5 @@ logdir=/tmp/pyminer
+ # set to 1, to enable hashmeter output
+ hashmeter=0
+ 
+-# set Avalon nano tty device id
+-tty=/dev/ttyACM0
+-
+ # verbose
+ verbose=0
+diff --git a/f2pool.cfg b/f2pool.cfg
+new file mode 100644
+index 0000000..9235551
+--- /dev/null
++++ b/f2pool.cfg
+@@ -0,0 +1,31 @@
++#
++# RPC login details
++#
++host=128.199.157.81
++port=8332
++
++rpcuser=mikeqin
++rpcpass=1234
++
++#
++# mining details
++#
++
++threads=1
++
++# periodic rate for requesting new work, if solution not found
++scantime=60
++
++
++#
++# misc.
++#
++
++# not really used right now
++logdir=/tmp/pyminer
++
++# set to 1, to enable hashmeter output
++hashmeter=1
++
++# verbose
++verbose=1
+diff --git a/pyminer.py b/pyminer.py
+index 05a44a8..f1f10f1 100755
+--- a/pyminer.py
++++ b/pyminer.py
+@@ -26,12 +26,19 @@ import re
+ import base64
+ import httplib
+ import sys
+-from serial import Serial
++import usb.core
++import usb.util
++import binascii
+ from multiprocessing import Process
+ from midstate import calculateMidstate
+ 
+ ERR_SLEEP = 15
+ 
++TYPE_WORK = "24"
++TYPE_POLLING = "30"
++TYPE_NONCE_M = "42"
++DATA_OFFSET = 6
++
+ settings = {}
+ pp = pprint.PrettyPrinter(indent=4)
+ 
+@@ -99,9 +106,73 @@ def wordreverse(in_buf):
+ 	return ''.join(out_words)
+ 
+ class Miner:
+-	def __init__(self, id, tty):
++	usbdev = None
++	endpin = None
++	endpout = None
++	def __init__(self, id, vendor_id, product_id):
+ 		self.id = id
+-                self.ser = Serial(tty, 57600, 8, timeout=2) # 2 second
++                self.usbdev, self.endpin, self.endpout = self.enum_usbdev(vendor_id, product_id)
++
++	def enum_usbdev(self, vendor_id, product_id):
++		# Find device
++	    usbdev = usb.core.find(idVendor = vendor_id, idProduct = product_id)
++
++	    if not usbdev:
++		    sys.exit("Avalon nano cann't be found!")
++	    else:
++		    print "Find an Avalon nano"
++
++	    try:
++		    if usbdev.is_kernel_driver_active(0) is True:
++			    usbdev.detach_kernel_driver(0)
++	    except:
++		    print "detach kernel driver failed"
++
++	    try:
++		    # usbdev[iConfiguration][(bInterfaceNumber,bAlternateSetting)]
++		for endp in usbdev[0][(0,0)]:
++			if endp.bEndpointAddress & 0x80:
++				endpin = endp.bEndpointAddress
++			else:
++			    endpout = endp.bEndpointAddress
++
++	    except usb.core.USBError as e:
++		    sys.exit("Could not set configuration: %s" % str(e))
++
++	    return usbdev, endpin, endpout
++
++        def CRC16(self, message):
++                #CRC-16-CITT poly, the CRC sheme used by ymodem protocol
++                poly = 0x1021
++                 #16bit operation register, initialized to zeros
++                reg = 0x0000
++                #pad the end of the message with the size of the poly
++                message += '\x00\x00'
++                #for each bit in the message
++                for byte in message:
++                        mask = 0x80
++                        while(mask > 0):
++                                #left shift by one
++                                reg<<=1
++                                #input the next bit from the message into the right hand side of the op reg
++                                if ord(byte) & mask:
++                                        reg += 1
++                                mask>>=1
++                                #if a one popped out the left of the reg, xor reg w/poly
++                                if reg > 0xffff:
++                                        #eliminate any one that popped out the left
++                                        reg &= 0xffff
++                                        #xor with the poly, this is the remainder
++                                        reg ^= poly
++                return reg
++
++	def mm_package(self, cmd_type, idx = "01", cnt = "01", module_id = None, pdata = '0'):
++		if module_id == None:
++			data = pdata.ljust(64, '0')
++		else:
++			data = pdata.ljust(60, '0') + module_id.rjust(4, '0')
++		crc = self.CRC16(data.decode("hex"))
++		return "434e" + cmd_type + "00" + idx + cnt + data + hex(crc)[2:].rjust(4, '0')
+ 
+ 	def work(self, datastr, targetstr):
+ 		# decode work data hex string to binary
+@@ -121,58 +192,82 @@ class Miner:
+ 		static_hash = hashlib.sha256()
+ 		static_hash.update(blk_hdr)
+ 
+-                # calculate midstate
+-                midstate_bin = calculateMidstate(datastr.decode('hex')[:64])
+-
+-                # send task to Avalon nano
+-                icarus_bin = midstate_bin[::-1] + '0'.rjust(40, '0').decode('hex') + datastr.decode('hex')[64:76][::-1]
+-                if settings['verbose'] == 1:
+-                        print 'send task:' + icarus_bin.encode('hex')
+-                self.ser.flushInput()
+-                self.ser.write(icarus_bin)
+-
+-                # read nonce back
+-                rdata = self.ser.read(100)
+-                if rdata.encode('hex')[0:8] == "":
+-                        print time.asctime(), "No Nonce found"
+-                        return (0xffffffff, None)
+-                else:
+-                        if settings['verbose'] == 1:
+-                                print 'nonce:', rdata.encode('hex')[0:8]
+-
+-                # encode 32-bit nonce value
+-                nonce = int(rdata.encode('hex')[0:8], 16)
+-                nonce = bytereverse(nonce)
+-                nonce_bin = struct.pack("<I", nonce)
+-
+-                # hash final 4b, the nonce value
+-                hash1_o = static_hash.copy()
+-                hash1_o.update(nonce_bin)
+-                hash1 = hash1_o.digest()
+-
+-                # sha256 hash of sha256 hash
+-                hash_o = hashlib.sha256()
+-                hash_o.update(hash1)
+-                hash = hash_o.digest()
+-
+-                # quick test for winning solution: high 32 bits zero?
+-                if hash[-4:] != '\0\0\0\0':
+-                        print time.asctime(), "Invalid Nonce"
+-                        return (0xffffffff, None)
+-
+-                # convert binary hash to 256-bit Python long
+-                hash = bufreverse(hash)
+-                hash = wordreverse(hash)
+-
+-                hash_str = hash.encode('hex')
+-                l = long(hash_str, 16)
+-
+-                # proof-of-work test:  hash < target
+-                if l < target:
+-                        print time.asctime(), "PROOF-OF-WORK found: %064x" % (l,)
+-                        return (0xffffffff, nonce_bin)
+-                else:
+-                        print time.asctime(), "PROOF-OF-WORK false positive %064x" % (l,)
++		# calculate midstate
++		midstate_bin = calculateMidstate(datastr.decode('hex')[:64])
++
++		# send task to Avalon nano
++		icarus_bin = midstate_bin[::-1] + '0'.rjust(40, '0').decode('hex') + datastr.decode('hex')[64:76][::-1]
++		if settings['verbose'] == 1:
++			print 'send task:' + icarus_bin.encode('hex')
++		workpkg = icarus_bin.encode('hex')[:64]
++		work_bin = self.mm_package(TYPE_WORK, "01", "02", pdata = workpkg).decode('hex')
++		self.usbdev.write(self.endpout, work_bin)
++		workpkg = icarus_bin.encode('hex')[64:128]
++		work_bin = self.mm_package(TYPE_WORK, "02", "02", pdata = workpkg).decode('hex')
++		self.usbdev.write(self.endpout, work_bin)
++
++		time.sleep(1);
++
++		# send polling
++		work_bin = self.mm_package(TYPE_POLLING, "01", "01").decode('hex')
++		self.usbdev.write(self.endpout, work_bin)
++
++		# read nonce back
++		rdata = None
++		loop = 0
++		while (rdata == None):
++			try:
++				rdata = self.usbdev.read(self.endpin, 40)
++			except:
++				pass
++
++			time.sleep(0.01)
++			loop = loop + 1
++			if loop == 3:
++				break
++
++		if rdata == None or hex(rdata[2])[2:] != TYPE_NONCE_M:
++			print time.asctime(), "No Nonce found"
++			return (0xffffffff, None)
++		else:
++			print 'nonce:', binascii.hexlify(rdata)
++			if settings['verbose'] == 1:
++				print 'nonce:', binascii.hexlify(rdata)[(DATA_OFFSET + 8) << 1:(DATA_OFFSET + 12) << 1]
++
++		# encode 32-bit nonce value
++		nonce = (rdata[DATA_OFFSET + 8] << 24) | (rdata[DATA_OFFSET + 9] << 16) | (rdata[DATA_OFFSET + 10] << 8) | rdata[DATA_OFFSET + 11]
++		nonce = nonce - 0x4000
++		nonce = bytereverse(nonce)
++		nonce_bin = struct.pack("<I", nonce)
++
++		# hash final 4b, the nonce value
++		hash1_o = static_hash.copy()
++		hash1_o.update(nonce_bin)
++		hash1 = hash1_o.digest()
++
++		# sha256 hash of sha256 hash
++		hash_o = hashlib.sha256()
++		hash_o.update(hash1)
++		hash = hash_o.digest()
++
++		# quick test for winning solution: high 32 bits zero?
++		if hash[-4:] != '\0\0\0\0':
++			print time.asctime(), "Invalid Nonce"
++			return (0xffffffff, None)
++
++		# convert binary hash to 256-bit Python long
++		hash = bufreverse(hash)
++		hash = wordreverse(hash)
++
++		hash_str = hash.encode('hex')
++		l = long(hash_str, 16)
++
++		# proof-of-work test:  hash < target
++		if l < target:
++			print time.asctime(), "PROOF-OF-WORK found: %064x" % (l,)
++			return (0xffffffff, nonce_bin)
++		else:
++			print time.asctime(), "PROOF-OF-WORK false positive %064x" % (l,)
+ 		return (0xffffffff, None)
+ 
+ 	def submit_work(self, rpc, original_data, nonce_bin):
+@@ -217,8 +312,8 @@ class Miner:
+ 		while True:
+ 			self.iterate(rpc)
+ 
+-def miner_thread(id, tty):
+-	miner = Miner(id, tty)
++def miner_thread(id, vendor_id, product_id):
++	miner = Miner(id, vendor_id, product_id)
+ 	miner.loop()
+ 
+ if __name__ == '__main__':
+@@ -266,8 +361,10 @@ if __name__ == '__main__':
+         settings['verbose'] = int(settings['verbose'])
+ 
+ 	thr_list = []
++	nano_vid = 0x29f1
++	nano_pid = 0x33f3
+ 	for thr_id in range(settings['threads']):
+-		p = Process(target=miner_thread, args=(thr_id, settings['tty']))
++		p = Process(target=miner_thread, args=(thr_id, nano_vid, nano_pid))
+ 		p.start()
+ 		thr_list.append(p)
+ 		time.sleep(1)			# stagger threads
+-- 
+2.0.0
+
