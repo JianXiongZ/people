@@ -1,3 +1,12 @@
+From 4d96bed075c5bb9409be6914d98b6223ae3b8aa7 Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Thu, 21 May 2015 13:07:58 +0800
+Subject: [PATCH 1/2] Encrypt the packet
+
+---
+ driver-avalon4.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
 diff --git a/driver-avalon4.c b/driver-avalon4.c
 index ca0e004..913c5fd 100644
 --- a/driver-avalon4.c
@@ -20,3 +29,45 @@ index ca0e004..913c5fd 100644
  		ret = avalon4_iic_xfer_pkg(avalon4, i, &send_pkg, &ar);
  		if (ret == AVA4_SEND_OK)
  			decode_err =  decode_pkg(thr, &ar, i);
+-- 
+1.7.10.4
+
+
+From 1676ee45aee4b6500e5525c73563ad566635b768 Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Tue, 26 May 2015 11:43:59 +0800
+Subject: [PATCH 2/2] Encrypt detect package
+
+---
+ driver-avalon4.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/driver-avalon4.c b/driver-avalon4.c
+index 913c5fd..61369a6 100644
+--- a/driver-avalon4.c
++++ b/driver-avalon4.c
+@@ -1041,6 +1041,7 @@ static void detect_modules(struct cgpu_info *avalon4)
+ 		tmp = be32toh(i); /* ID */
+ 		memcpy(send_pkg.data + 28, &tmp, 4);
+ 		avalon4_init_pkg(&send_pkg, AVA4_P_DETECT, 1, 1);
++		send_pkg.opt = i;
+ 		err = avalon4_iic_xfer_pkg(avalon4, AVA4_MODULE_BROADCAST, &send_pkg, &ret_pkg);
+ 		if (err == AVA4_SEND_OK) {
+ 			if (decode_pkg(thr, &ret_pkg, AVA4_MODULE_BROADCAST)) {
+@@ -1061,6 +1062,13 @@ static void detect_modules(struct cgpu_info *avalon4)
+ 		if (ret_pkg.type != AVA4_P_ACKDETECT)
+ 			break;
+ 
++		if (ret_pkg.opt != i) {
++			applog(LOG_DEBUG, "%s-%d: Unsupport Module",
++				avalon4->drv->name, avalon4->device_id);
++			info->enable[i] = 0;
++			continue;
++		}
++
+ 		cgtime(&info->elapsed[i]);
+ 		info->enable[i] = 1;
+ 		memcpy(info->mm_dna[i], ret_pkg.data, AVA4_MM_DNA_LEN);
+-- 
+1.7.10.4
+
