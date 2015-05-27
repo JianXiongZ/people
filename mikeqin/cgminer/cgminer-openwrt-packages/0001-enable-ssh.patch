@@ -1,0 +1,26 @@
+diff --git a/cgminer/Makefile b/cgminer/Makefile
+index f3811eb..8524584 100644
+--- a/cgminer/Makefile
++++ b/cgminer/Makefile
+@@ -41,7 +41,7 @@ define Package/cgminer
+ 	TITLE:=cgminer
+ 	URL:=https://github.com/ckolivas/cgminer
+ ifeq ($(CONFIG_TARGET_brcm2708_RaspberryPi),)
+-	DEPENDS:=+libcurl +libpthread +jansson +udev
++	DEPENDS:=+libcurl +libpthread +jansson +udev +libopenssl
+ else
+ 	DEPENDS:=+libcurl +libpthread +jansson +udev +libncurses
+ endif
+diff --git a/cgminer/data/config.avalon4.raspberry-pi b/cgminer/data/config.avalon4.raspberry-pi
+index f28f312..c06b244 100644
+--- a/cgminer/data/config.avalon4.raspberry-pi
++++ b/cgminer/data/config.avalon4.raspberry-pi
+@@ -63,3 +63,8 @@ CONFIG_PACKAGE_mm-tools=y
+ #
+ CONFIG_PACKAGE_kmod-i2c-bcm2708=y
+ CONFIG_PACKAGE_kmod-i2c-core=y
++
++#
++# SSH
++#
++CONFIG_PACKAGE_libopenssl=y
