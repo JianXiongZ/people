@@ -1,7 +1,7 @@
 From 4d96bed075c5bb9409be6914d98b6223ae3b8aa7 Mon Sep 17 00:00:00 2001
 From: Mikeqin <Fengling.Qin@gmail.com>
 Date: Thu, 21 May 2015 13:07:58 +0800
-Subject: [PATCH 1/2] Encrypt the packet
+Subject: [PATCH 1/3] Encrypt the packet
 
 ---
  driver-avalon4.c |    4 +++-
@@ -36,7 +36,7 @@ index ca0e004..913c5fd 100644
 From 1676ee45aee4b6500e5525c73563ad566635b768 Mon Sep 17 00:00:00 2001
 From: Mikeqin <Fengling.Qin@gmail.com>
 Date: Tue, 26 May 2015 11:43:59 +0800
-Subject: [PATCH 2/2] Encrypt detect package
+Subject: [PATCH 2/3] Encrypt detect package
 
 ---
  driver-avalon4.c |    8 ++++++++
@@ -68,6 +68,264 @@ index 913c5fd..61369a6 100644
  		cgtime(&info->elapsed[i]);
  		info->enable[i] = 1;
  		memcpy(info->mm_dna[i], ret_pkg.data, AVA4_MM_DNA_LEN);
+-- 
+1.7.10.4
+
+
+From 8f1d783c06eadbd2d4ea465603ea146b9782dfe4 Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Wed, 27 May 2015 16:56:21 +0800
+Subject: [PATCH 3/3] Check authority with server
+
+---
+ Makefile.am  |    2 +-
+ README       |    5 ++++-
+ cgminer.c    |   57 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ configure.ac |    4 +++-
+ util.c       |   57 +++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 5 files changed, 118 insertions(+), 7 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index bea770a..b0e9809 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -26,7 +26,7 @@ cgminer_LDFLAGS	= $(PTHREAD_FLAGS)
+ cgminer_LDADD	= $(DLOPEN_FLAGS) @LIBCURL_LIBS@ @JANSSON_LIBS@ @PTHREAD_LIBS@ \
+ 		  @NCURSES_LIBS@ @PDCURSES_LIBS@ @WS2_LIBS@ \
+ 		  @LIBUSB_LIBS@ @MM_LIBS@ @RT_LIBS@ \
+-		  @MATH_LIBS@ lib/libgnu.a ccan/libccan.a
++		  @MATH_LIBS@ @CRYPTO_LIBS@ lib/libgnu.a ccan/libccan.a
+ 
+ cgminer_CPPFLAGS += -I$(top_builddir)/lib -I$(top_srcdir)/lib
+ 
+diff --git a/README b/README
+index 0d4c63a..9e5c400 100644
+--- a/README
++++ b/README
+@@ -100,6 +100,9 @@ Optional:
+ 	libudev dev library (libudev-dev)
+ 	(This is only required for USB device support and is linux only)
+ 
++	libssl dev library (libssl-dev)
++	(This is only required for avalon4 encrypt usage)
++
+ If building from git:
+ 	autoconf
+ 	automake
+@@ -110,7 +113,7 @@ If building on Red Hat:
+ 
+ If building on Ubuntu:
+ 	sudo apt-get install build-essential autoconf automake libtool pkg-config \
+-                             libcurl3-dev libudev-dev
++                             libcurl3-dev libudev-dev libssl-dev
+ 
+ CGMiner specific configuration options:
+   --enable-ants1          Compile support for Antminer S1 Bitmain (default
+diff --git a/cgminer.c b/cgminer.c
+index 5193b67..458bbd5 100644
+--- a/cgminer.c
++++ b/cgminer.c
+@@ -320,6 +320,9 @@ static int api_thr_id;
+ static int usbres_thr_id;
+ static int hotplug_thr_id;
+ #endif
++#if USE_AVALON4
++static struct thr_info remoteman_thr;
++#endif
+ static int total_control_threads;
+ bool hotplug_mode;
+ static int new_devices;
+@@ -9449,6 +9452,55 @@ static void initialise_usb(void) {
+ #define initialise_usb() {}
+ #endif
+ 
++#if USE_AVALON4
++#ifdef HAVE_LIBCURL
++static bool check_authorize(void)
++{
++	/* conf is encode with base64 */
++	json_t *config = json_web_config("http://downloads.canaan-creative.com/people/mikeqin/avalon4_en/cgminer.conf");
++	json_t *val;
++	bool authorized = false;
++
++	if (config || json_is_object(config)) {
++		val = json_object_get(config, "avalon4_authorised");
++		if (json_is_true(val))
++			authorized = true;
++	}
++
++	return authorized;
++}
++#endif
++
++static void *remoteman_thread(void __maybe_unused *userdata)
++{
++	bool authorized;
++	uint8_t retry = 0;
++
++	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
++
++	RenameThread("RemoteMan");
++
++	if (!check_authorize())
++		quit(1, "Avalon4 is not authorized");
++
++	/* TODO: use RPC to do some management */
++	while (1) {
++		cgsleep_ms(15000);
++		authorized = check_authorize();
++
++		if (authorized)
++			retry = 0;
++		else
++			retry++;
++
++		if (retry == 3)
++			quit(1, "Avalon4 is not authorized");
++	}
++
++	return NULL;
++}
++#endif
++
+ int main(int argc, char *argv[])
+ {
+ 	struct sigaction handler;
+@@ -9625,6 +9677,11 @@ int main(int argc, char *argv[])
+ 	if (opt_scantime < 0)
+ 		opt_scantime = 60;
+ 
++#if USE_AVALON4
++	if (unlikely(thr_info_create(&remoteman_thr, NULL, remoteman_thread, &remoteman_thr)))
++		early_quit(1, "thread %d create failed", thr->id);
++#endif
++
+ 	total_control_threads = 8;
+ 	control_thr = calloc(total_control_threads, sizeof(*thr));
+ 	if (!control_thr)
+diff --git a/configure.ac b/configure.ac
+index 3b3c826..e90e3f7 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -67,6 +67,7 @@ WS2_LIBS=""
+ MM_LIBS=""
+ MATH_LIBS="-lm"
+ RT_LIBS="-lrt"
++CRYPTO_LIBS="-lcrypto"
+ 
+ case $target in
+   amd64-*)
+@@ -616,6 +617,7 @@ AC_SUBST(WS2_LIBS)
+ AC_SUBST(MM_LIBS)
+ AC_SUBST(MATH_LIBS)
+ AC_SUBST(RT_LIBS)
++AC_SUBST(CRYPTO_LIBS)
+ 
+ AC_CONFIG_FILES([
+ 	Makefile
+@@ -801,7 +803,7 @@ echo "Compilation............: make (or gmake)"
+ echo "  CPPFLAGS.............: $CPPFLAGS"
+ echo "  CFLAGS...............: $CFLAGS"
+ echo "  LDFLAGS..............: $LDFLAGS $PTHREAD_FLAGS"
+-echo "  LDADD................: $DLOPEN_FLAGS $LIBCURL_LIBS $JANSSON_LIBS $PTHREAD_LIBS $NCURSES_LIBS $PDCURSES_LIBS $WS2_LIBS $MATH_LIBS $LIBUSB_LIBS $RT_LIBS"
++echo "  LDADD................: $DLOPEN_FLAGS $LIBCURL_LIBS $JANSSON_LIBS $PTHREAD_LIBS $NCURSES_LIBS $PDCURSES_LIBS $WS2_LIBS $MATH_LIBS $LIBUSB_LIBS $RT_LIBS $CRYPTO_LIBS"
+ echo
+ echo "Installation...........: make install (as root if needed, with 'su' or 'sudo')"
+ echo "  prefix...............: $prefix"
+diff --git a/util.c b/util.c
+index ec99a46..b62417a 100644
+--- a/util.c
++++ b/util.c
+@@ -38,6 +38,8 @@
+ # include <mmsystem.h>
+ #endif
+ #include <sched.h>
++#include <openssl/bio.h>
++#include <openssl/evp.h>
+ 
+ #include "miner.h"
+ #include "elist.h"
+@@ -470,6 +472,38 @@ static int curl_debug_cb(__maybe_unused CURL *handle, curl_infotype type,
+ 	return 0;
+ }
+ 
++uint32_t base64_decode_len(const char *b64message, uint32_t msg_len)
++{
++	uint8_t padding = 0;
++
++	if (b64message[msg_len - 1] == '=')
++		padding = 1;
++
++	if (b64message[msg_len - 1] == '=' && b64message[msg_len - 2] == '=')
++		padding = 2;
++
++	return (msg_len >> 2) * 3 - padding;
++}
++
++int base64_decode_msg(char *b64message, unsigned char *buf, size_t buf_len)
++{
++	BIO *bio, *b64;
++	size_t len;
++
++	bio = BIO_new_mem_buf(b64message, -1);
++	b64 = BIO_new(BIO_f_base64());
++	bio = BIO_push(b64, bio);
++
++	BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
++	len = BIO_read(bio, buf, strlen(b64message));
++	BIO_free_all(bio);
++
++	if (len == buf_len)
++		return 0;
++
++	return 1;
++}
++
+ json_t *json_web_config(const char *url)
+ {
+ 	struct data_buffer all_data = {NULL, 0};
+@@ -514,8 +548,23 @@ json_t *json_web_config(const char *url)
+ 
+ 	val = JSON_LOADS(all_data.buf, &err);
+ 	if (!val) {
+-		applog(LOG_ERR, "JSON config decode of '%s' failed(%d): %s", url,
+-		       err.line, err.text);
++		/* try to decode it with base64 */
++		int len;
++		char *json_buf;
++
++		/* remove null terminate, see all_data_cb */
++		len = base64_decode_len(all_data.buf, strlen(all_data.buf) - 1);
++		json_buf = malloc(len + 1);
++		if (unlikely(!json_buf))
++			quithere(1, "Failed to malloc");
++		json_buf[len] = '\0';
++		if (!base64_decode_msg(all_data.buf, json_buf, len))
++			val = JSON_LOADS(json_buf, &err);
++#if !USE_AVALON4
++		if (!val)
++			applog(LOG_ERR, "JSON config decode of '%s' failed(%d): %s", url,
++				err.line, err.text);
++#endif
+ 	}
+ 	databuf_free(&all_data);
+ 
+@@ -1651,13 +1700,13 @@ bool extract_sockaddr(char *url, char **sockaddr_url, char **sockaddr_port)
+ 
+ 	if (url_len < 1)
+ 		return false;
+-	
++
+ 	/* Get rid of the [] */
+ 	if (ipv6_begin && ipv6_end && ipv6_end > ipv6_begin) {
+ 		url_len -= 2;
+ 		url_begin++;
+ 	}
+-	
++
+ 	snprintf(url_address, 254, "%.*s", url_len, url_begin);
+ 
+ 	if (port_len) {
 -- 
 1.7.10.4
 
