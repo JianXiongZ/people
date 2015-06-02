@@ -1,10 +1,10 @@
 From 4d96bed075c5bb9409be6914d98b6223ae3b8aa7 Mon Sep 17 00:00:00 2001
 From: Mikeqin <Fengling.Qin@gmail.com>
 Date: Thu, 21 May 2015 13:07:58 +0800
-Subject: [PATCH 1/3] Encrypt the packet
+Subject: [PATCH 1/5] Encrypt the packet
 
 ---
- driver-avalon4.c |    4 +++-
+ driver-avalon4.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/driver-avalon4.c b/driver-avalon4.c
@@ -30,16 +30,16 @@ index ca0e004..913c5fd 100644
  		if (ret == AVA4_SEND_OK)
  			decode_err =  decode_pkg(thr, &ar, i);
 -- 
-1.7.10.4
+1.9.1
 
 
 From 1676ee45aee4b6500e5525c73563ad566635b768 Mon Sep 17 00:00:00 2001
 From: Mikeqin <Fengling.Qin@gmail.com>
 Date: Tue, 26 May 2015 11:43:59 +0800
-Subject: [PATCH 2/3] Encrypt detect package
+Subject: [PATCH 2/5] Encrypt detect package
 
 ---
- driver-avalon4.c |    8 ++++++++
+ driver-avalon4.c | 8 ++++++++
  1 file changed, 8 insertions(+)
 
 diff --git a/driver-avalon4.c b/driver-avalon4.c
@@ -69,20 +69,20 @@ index 913c5fd..61369a6 100644
  		info->enable[i] = 1;
  		memcpy(info->mm_dna[i], ret_pkg.data, AVA4_MM_DNA_LEN);
 -- 
-1.7.10.4
+1.9.1
 
 
 From 8f1d783c06eadbd2d4ea465603ea146b9782dfe4 Mon Sep 17 00:00:00 2001
 From: Mikeqin <Fengling.Qin@gmail.com>
 Date: Wed, 27 May 2015 16:56:21 +0800
-Subject: [PATCH 3/3] Check authority with server
+Subject: [PATCH 3/5] Check authority with server
 
 ---
- Makefile.am  |    2 +-
- README       |    5 ++++-
- cgminer.c    |   57 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- configure.ac |    4 +++-
- util.c       |   57 +++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ Makefile.am  |  2 +-
+ README       |  5 ++++-
+ cgminer.c    | 57 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ configure.ac |  4 +++-
+ util.c       | 57 +++++++++++++++++++++++++++++++++++++++++++++++++++++----
  5 files changed, 118 insertions(+), 7 deletions(-)
 
 diff --git a/Makefile.am b/Makefile.am
@@ -327,5 +327,247 @@ index ec99a46..b62417a 100644
  
  	if (port_len) {
 -- 
-1.7.10.4
+1.9.1
+
+
+From f5cfb77076e039a57a23bec7263aa587fe98018d Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Tue, 2 Jun 2015 12:57:58 +0800
+Subject: [PATCH 4/5] Support mm area code setting
+
+---
+ driver-avalon4.c | 64 +++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ driver-avalon4.h |  6 ++++++
+ 2 files changed, 69 insertions(+), 1 deletion(-)
+
+diff --git a/driver-avalon4.c b/driver-avalon4.c
+index 61369a6..d4aa93b 100644
+--- a/driver-avalon4.c
++++ b/driver-avalon4.c
+@@ -481,6 +481,7 @@ static int decode_pkg(struct thr_info *thr, struct avalon4_ret *ar, int modular_
+ 		info->local_work[modular_id] = be32toh(info->local_work[modular_id]);
+ 		info->hw_work[modular_id] = be32toh(info->hw_work[modular_id]);
+ 		info->power_good[modular_id] = be32toh(info->power_good[modular_id]);
++		info->get_area[modular_id] = (ar->data[28] << 8) | ar->data[29];
+ 
+ 		volt = info->get_voltage[modular_id];
+ 		if (info->mod_type[modular_id] == AVA4_TYPE_MM40)
+@@ -961,6 +962,7 @@ static struct cgpu_info *avalon4_auc_detect(struct libusb_device *dev, struct us
+ 			info->set_voltage_i[i][j] = opt_avalon4_voltage_min;
+ 			info->set_voltage_offset[i][j] = 0;
+ 		}
++		info->get_area[i] = AVA4_DEFAULT_AREA;
+ 	}
+ 
+ 	info->enable[0] = 1;
+@@ -970,6 +972,7 @@ static struct cgpu_info *avalon4_auc_detect(struct libusb_device *dev, struct us
+ 	info->set_frequency[0] = opt_avalon4_freq[0];
+ 	info->set_frequency[1] = opt_avalon4_freq[1];
+ 	info->set_frequency[2] = opt_avalon4_freq[2];
++	info->get_area[0] = AVA4_DEFAULT_AREA;
+ 
+ 	return avalon4;
+ }
+@@ -1371,6 +1374,43 @@ static void avalon4_set_freq(struct cgpu_info *avalon4, int addr)
+ 		avalon4_iic_xfer_pkg(avalon4, addr, &send_pkg, NULL);
+ }
+ 
++char *avalon4_set_area(struct cgpu_info *avalon4, char *arg)
++{
++	struct avalon4_info *info = avalon4->device_data;
++	struct avalon4_pkg send_pkg;
++	uint16_t tmp;
++	uint8_t i;
++	int addr, area, ret;
++
++	ret = sscanf(arg, "%d-%d", &addr, &area);
++	if (ret < 2)
++		return "Check addr and area code";
++
++	if (addr < 0 || addr >= AVA4_DEFAULT_MODULARS)
++		return "Invalid addr passed to avalon4_set_area";
++
++	if (area < AVA4_DEFAULT_AREA_MIN || area > AVA4_DEFAULT_AREA_MAX)
++		return "Invalid area passed to avalon4_set_area";
++
++	memset(send_pkg.data, 0, AVA4_P_DATA_LEN);
++
++	send_pkg.data[0] = (area >> 8) & 0xff;
++	send_pkg.data[1] = area & 0xff;
++
++	/* Package the data */
++	avalon4_init_pkg(&send_pkg, AVA4_P_SET_AREA, 1, 1);
++
++	if (addr == AVA4_MODULE_BROADCAST)
++		avalon4_send_bc_pkgs(avalon4, &send_pkg);
++	else
++		avalon4_iic_xfer_pkg(avalon4, addr, &send_pkg, NULL);
++
++	applog(LOG_NOTICE, "%s-%d-%d: Update area code to %d",
++		avalon4->drv->name, avalon4->device_id, addr, area);
++
++
++}
++
+ static void avalon4_stratum_set(struct cgpu_info *avalon4, struct pool *pool, int addr)
+ {
+ 	struct avalon4_info *info = avalon4->device_data;
+@@ -1954,6 +1994,13 @@ static struct api_data *avalon4_api_stats(struct cgpu_info *cgpu)
+ 		if (info->mod_type[i] == AVA4_TYPE_NULL)
+ 			continue;
+ 
++		sprintf(buf, " Area[%d]", info->get_area[i]);
++		strcat(statbuf[i], buf);
++	}
++	for (i = 1; i < AVA4_DEFAULT_MODULARS; i++) {
++		if (info->mod_type[i] == AVA4_TYPE_NULL)
++			continue;
++
+ 		sprintf(buf, "MM ID%d", i);
+ 		root = api_add_string(root, buf, statbuf[i], true);
+ 	}
+@@ -1974,7 +2021,7 @@ static char *avalon4_set_device(struct cgpu_info *avalon4, char *option, char *s
+ 	struct avalon4_info *info = avalon4->device_data;
+ 
+ 	if (strcasecmp(option, "help") == 0) {
+-		sprintf(replybuf, "led|fan|voltage|frequency|pdelay|freezesafe");
++		sprintf(replybuf, "led|fan|voltage|frequency|pdelay|freezesafe|area");
+ 		return replybuf;
+ 	}
+ 
+@@ -2163,6 +2210,21 @@ static char *avalon4_set_device(struct cgpu_info *avalon4, char *option, char *s
+ 		return NULL;
+ 	}
+ 
++	if (strcasecmp(option, "area") == 0) {
++		if (!setting || !*setting) {
++			sprintf(replybuf, "missing area code");
++			return replybuf;
++		}
++
++		if (avalon4_set_area(avalon4, setting)) {
++			sprintf(replybuf, "invalid area code, valid range %d-%d",
++				AVA4_DEFAULT_AREA_MIN, AVA4_DEFAULT_AREA_MAX);
++			return replybuf;
++		}
++
++		return NULL;
++	}
++
+ 	sprintf(replybuf, "Unknown option: %s", option);
+ 	return replybuf;
+ }
+diff --git a/driver-avalon4.h b/driver-avalon4.h
+index f97ec87..c4644e1 100644
+--- a/driver-avalon4.h
++++ b/driver-avalon4.h
+@@ -57,6 +57,10 @@
+ #define AVA4_MOD_NORMAL 0x2
+ #define AVA4_MOD_TURBO  0x3
+ 
++#define AVA4_DEFAULT_AREA_MIN	0
++#define AVA4_DEFAULT_AREA_MAX	0xffff
++#define AVA4_DEFAULT_AREA	0
++
+ /* Avalon4 protocol package type from MM protocol.h
+  * https://github.com/Canaan-Creative/MM/blob/avalon4/firmware/protocol.h */
+ #define AVA4_MM_VER_LEN	15
+@@ -86,6 +90,7 @@
+ #define AVA4_P_FINISH	0x21
+ #define AVA4_P_SET_VOLT 0x22
+ #define AVA4_P_SET_FREQ 0x23
++#define AVA4_P_SET_AREA 0x24
+ 
+ /* Have to with I2C address */
+ #define AVA4_P_POLLING	0x30
+@@ -194,6 +199,7 @@ struct avalon4_info {
+ 	uint8_t saved[AVA4_DEFAULT_MODULARS];
+ 	uint8_t adjflag[AVA4_DEFAULT_MODULARS][AVA4_DEFAULT_MINERS];
+ 	uint8_t cutoff[AVA4_DEFAULT_MODULARS];
++	uint16_t get_area[AVA4_DEFAULT_MODULARS];
+ };
+ 
+ struct avalon4_iic_info {
+-- 
+1.9.1
+
+
+From 85b2a08a69d2f4235ef6a5d33eb1b2108b62f204 Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Tue, 2 Jun 2015 16:59:10 +0800
+Subject: [PATCH 5/5] Match area
+
+---
+ driver-avalon4.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/driver-avalon4.c b/driver-avalon4.c
+index d4aa93b..0ce0d33 100644
+--- a/driver-avalon4.c
++++ b/driver-avalon4.c
+@@ -43,6 +43,7 @@ int opt_avalon4_aucxdelay = AVA4_AUC_XDELAY;
+ int opt_avalon4_ntime_offset = AVA4_DEFAULT_ASIC_COUNT;
+ int opt_avalon4_miningmode = AVA4_MOD_CUSTOM;
+ 
++static uint16_t avalon4_area = AVA4_DEFAULT_AREA;
+ static uint8_t avalon4_freezsafemode = 0;
+ static uint32_t g_freq_array[][2] = {
+ 	{100, 0x1e678447},
+@@ -987,6 +988,7 @@ static bool avalon4_prepare(struct thr_info *thr)
+ 	int i;
+ 	struct cgpu_info *avalon4 = thr->cgpu;
+ 	struct avalon4_info *info = avalon4->device_data;
++	char *penv, temp_str[10];
+ 
+ 	info->polling_first = 1;
+ 
+@@ -1019,6 +1021,12 @@ static bool avalon4_prepare(struct thr_info *thr)
+ 			break;
+ 	}
+ 
++	penv = getenv("AVA4_AREA");
++	if (penv) {
++		strcpy(temp_str, penv);
++		avalon4_area = atoi(temp_str);
++	}
++
+ 	return true;
+ }
+ 
+@@ -1031,6 +1039,7 @@ static void detect_modules(struct cgpu_info *avalon4)
+ 	struct avalon4_ret ret_pkg;
+ 	uint32_t tmp;
+ 	int i, j, err;
++	uint16_t area;
+ 
+ 	/* Detect new modules here */
+ 	for (i = 1; i < AVA4_DEFAULT_MODULARS; i++) {
+@@ -1072,6 +1081,16 @@ static void detect_modules(struct cgpu_info *avalon4)
+ 			continue;
+ 		}
+ 
++		area = ((ret_pkg.data[AVA4_MM_DNA_LEN + AVA4_MM_VER_LEN] << 8) & 0xff) |
++			ret_pkg.data[AVA4_MM_DNA_LEN + AVA4_MM_VER_LEN + 1];
++		/* area equals to 0 mean ignore area code */
++		if (area && (avalon4_area != area)) {
++			applog(LOG_DEBUG, "%s-%d-%d: Mismatch area %d, should %d",
++					avalon4->drv->name, avalon4->device_id, i, area, avalon4_area);
++			info->enable[i] = 0;
++			continue;
++		}
++
+ 		cgtime(&info->elapsed[i]);
+ 		info->enable[i] = 1;
+ 		memcpy(info->mm_dna[i], ret_pkg.data, AVA4_MM_DNA_LEN);
+@@ -1210,6 +1229,8 @@ static int polling(struct thr_info *thr, struct cgpu_info *avalon4, struct avalo
+ 					memset(info->lw5_i[i][j], 0, AVA4_DEFAULT_ADJ_TIMES * sizeof(uint32_t));
+ 					memset(info->hw5_i[i][j], 0, AVA4_DEFAULT_ADJ_TIMES * sizeof(uint32_t));
+ 				}
++				info->get_area[i] = 0;
++
+ 				applog(LOG_NOTICE, "%s-%d: Module detached! ID[%d]",
+ 				       avalon4->drv->name, avalon4->device_id, i);
+ 			}
+-- 
+1.9.1
 

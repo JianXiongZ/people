@@ -1,7 +1,7 @@
 From b3132c6246d6ca7a01fd3882b71ad8a0a1f7c4e8 Mon Sep 17 00:00:00 2001
 From: Mikeqin <Fengling.Qin@gmail.com>
 Date: Thu, 21 May 2015 12:53:45 +0800
-Subject: [PATCH 1/5] Encrypt the packet
+Subject: [PATCH 1/7] Encrypt the packet
 
 ---
  firmware/main.c | 7 ++++++-
@@ -33,13 +33,13 @@ index a37629a..ad207d2 100644
  		memcpy(&tmp, data, 4);
  		g_led_blinking = tmp;
 -- 
-2.0.0
+1.9.1
 
 
 From eaa45019d4f6bfde7968d3c6ee6a5b05045c868c Mon Sep 17 00:00:00 2001
 From: Mikeqin <Fengling.Qin@gmail.com>
 Date: Tue, 26 May 2015 11:26:13 +0800
-Subject: [PATCH 2/5] Encrypt detect package
+Subject: [PATCH 2/7] Encrypt detect package
 
 ---
  firmware/main.c | 36 +++++++++++++++++++++++++++++++++---
@@ -139,13 +139,13 @@ index ad207d2..b900d97 100644
  			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
  			api_send_work(&work);
 -- 
-2.0.0
+1.9.1
 
 
 From 81b35e3c66aa38635d50b544af62116bdd1bfa6a Mon Sep 17 00:00:00 2001
 From: Mikeqin <Fengling.Qin@gmail.com>
 Date: Wed, 27 May 2015 18:03:37 +0800
-Subject: [PATCH 3/5] Set pll twice for process freq failed
+Subject: [PATCH 3/7] Set pll twice for process freq failed
 
 ---
  firmware/api.c | 2 ++
@@ -165,13 +165,13 @@ index eef70e4..082fa7f 100644
  }
  
 -- 
-2.0.0
+1.9.1
 
 
 From fa1bf13dc4bae67124b4d11301cc93ea3e486c9a Mon Sep 17 00:00:00 2001
 From: Mikeqin <Fengling.Qin@gmail.com>
 Date: Wed, 27 May 2015 18:06:19 +0800
-Subject: [PATCH 4/5] Fix work process detect
+Subject: [PATCH 4/7] Fix work process detect
 
 ---
  firmware/main.c | 6 +++---
@@ -212,13 +212,13 @@ index b900d97..19aad30 100644
  				gpio_led(g_module_id);
  			}
 -- 
-2.0.0
+1.9.1
 
 
 From 737e1397b7e2b491de1e7ed59146eb1884c53930 Mon Sep 17 00:00:00 2001
 From: Mikeqin <Fengling.Qin@gmail.com>
 Date: Wed, 27 May 2015 19:13:05 +0800
-Subject: [PATCH 5/5] Update firmware version
+Subject: [PATCH 5/7] Update firmware version
 
 ---
  firmware/Makefile | 2 +-
@@ -238,5 +238,95 @@ index cca2d25..c52c903 100644
  
  -include config.mk
 -- 
-2.0.0
+1.9.1
+
+
+From 2d56505b720916cd7da40c9c83ebfed551d1f028 Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Tue, 2 Jun 2015 12:56:33 +0800
+Subject: [PATCH 6/7] Support area code setting
+
+---
+ firmware/main.c     | 13 +++++++++++++
+ firmware/protocol.h |  1 +
+ 2 files changed, 14 insertions(+)
+
+diff --git a/firmware/main.c b/firmware/main.c
+index fdfb9f1..9171bd7 100644
+--- a/firmware/main.c
++++ b/firmware/main.c
+@@ -172,6 +172,9 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
+ 		p[3] = g_module_id & 0xff;
+ 		memcpy(data, g_dna, AVA4_MM_DNA_LEN); /* MM_DNA */
+ 		memcpy(data + AVA4_MM_DNA_LEN, buf, len); /* MM_VERSION */
++		/* MM_AREA */
++		data[AVA4_MM_DNA_LEN + len] = (g_mmcfg.reserved >> 8) & 0xff;
++		data[AVA4_MM_DNA_LEN + len + 1] = g_mmcfg.reserved & 0xff;
+ 		break;
+ 	case AVA4_P_NONCE:
+ 		p[3] = (g_dna[0] ^ g_dna[AVA4_MM_DNA_LEN - 1]);
+@@ -196,6 +199,9 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
+ 
+ 		tmp = read_power_good();
+ 		memcpy(data + 24, &tmp, 4);
++
++		data[28] = (g_mmcfg.reserved >> 8) & 0xff;
++		data[29] = g_mmcfg.reserved & 0xff;
+ 		break;
+ 	case AVA4_P_STATUS_LW:
+ 		for (i = 0; i < MINER_COUNT; i++) {
+@@ -543,6 +549,13 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
+ 	case AVA4_P_RSTMMTX:
+ 		iic_tx_reset();
+ 		break;
++	case AVA4_P_SET_AREA:
++		tmp = data[0] << 8 | data[1];
++		if (tmp == g_mmcfg.reserved)
++			break;
++		g_mmcfg.reserved = (int16_t)tmp;
++		mboot_save_config(&g_mmcfg);
++		break;
+ 	default:
+ 		break;
+ 	}
+diff --git a/firmware/protocol.h b/firmware/protocol.h
+index 52937bc..25e20cf 100644
+--- a/firmware/protocol.h
++++ b/firmware/protocol.h
+@@ -37,6 +37,7 @@
+ #define AVA4_P_FINISH	0x21
+ #define AVA4_P_SET_VOLT	0x22
+ #define AVA4_P_SET_FREQ	0x23
++#define AVA4_P_SET_AREA	0x24
+ 
+ /* Have to send with I2C address */
+ #define AVA4_P_POLLING	0x30
+-- 
+1.9.1
+
+
+From 21e21a3dfe6791f3858b71e39ec9fbdb5228540a Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Tue, 2 Jun 2015 17:41:18 +0800
+Subject: [PATCH 7/7] Update firmware version
+
+---
+ firmware/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/firmware/Makefile b/firmware/Makefile
+index c52c903..c2714c0 100644
+--- a/firmware/Makefile
++++ b/firmware/Makefile
+@@ -8,7 +8,7 @@
+ #
+ 
+ DATE:=$(shell date +%Y-%m-%d)
+-GIT_VERSION:=b53e79
++GIT_VERSION:=2d5650
+ GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
+ 
+ -include config.mk
+-- 
+1.9.1
 
