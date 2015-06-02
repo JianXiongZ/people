@@ -1,0 +1,40 @@
+diff --git a/cgminer/files/cgminer.avalon4.init b/cgminer/files/cgminer.avalon4.init
+index 5b6e868..f8eb649 100755
+--- a/cgminer/files/cgminer.avalon4.init
++++ b/cgminer/files/cgminer.avalon4.init
+@@ -28,6 +28,7 @@ start() {
+ 	local _mo
+ 
+ 	local _ntp_enable
++	local _area_code
+ 
+ 	config_load cgminer
+ 
+@@ -52,6 +53,7 @@ start() {
+ 	config_get _mo default more_options
+ 
+ 	config_get _ntp_enable default ntp_enable
++	config_get _area_code default area_code
+ 
+ 	if [ "$_pool1url" != "" -a "$_pool1user" != "" -a "$_pool1pw" != "" ]; then
+ 	    POOL1="-o $_pool1url -O $_pool1user:$_pool1pw"
+@@ -63,6 +65,10 @@ start() {
+ 	    POOL3="-o $_pool3url -O $_pool3user:$_pool3pw"
+ 	fi
+ 
++	if [ "$_area_code" == "" ]; then
++	    _area_code=0
++	fi
++
+ 	AVA4_OPTIONS=" --lowmem --avalon4-fan $_fan-100 --avalon4-freq $_cf --avalon4-voltage $_cv $_mmode $_va"
+ 	PARAMS=" $AVA4_OPTIONS $POOL1 $POOL2 $POOL3 $_pb --api-allow $_aa --api-listen $_mo "
+ 
+@@ -90,7 +96,7 @@ start() {
+         fi
+ 
+ 	sleep 2
+-	start-stop-daemon -S -x $APP -p $PID_FILE -m -b -- $PARAMS
++	env AVA4_AREA=$_area_code start-stop-daemon -S -x $APP -p $PID_FILE -m -b -- $PARAMS
+ }
+ 
+ stop() {

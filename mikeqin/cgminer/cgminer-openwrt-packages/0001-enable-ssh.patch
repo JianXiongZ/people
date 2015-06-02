@@ -1,16 +1,16 @@
 diff --git a/cgminer/Makefile b/cgminer/Makefile
-index f3811eb..8524584 100644
+index f3811eb..803f9c9 100644
 --- a/cgminer/Makefile
 +++ b/cgminer/Makefile
-@@ -41,7 +41,7 @@ define Package/cgminer
- 	TITLE:=cgminer
- 	URL:=https://github.com/ckolivas/cgminer
+@@ -43,7 +43,7 @@ define Package/cgminer
  ifeq ($(CONFIG_TARGET_brcm2708_RaspberryPi),)
--	DEPENDS:=+libcurl +libpthread +jansson +udev
-+	DEPENDS:=+libcurl +libpthread +jansson +udev +libopenssl
+ 	DEPENDS:=+libcurl +libpthread +jansson +udev
  else
- 	DEPENDS:=+libcurl +libpthread +jansson +udev +libncurses
+-	DEPENDS:=+libcurl +libpthread +jansson +udev +libncurses
++	DEPENDS:=+libcurl +libpthread +jansson +udev +libncurses +libopenssl
  endif
+ endef
+ 
 diff --git a/cgminer/data/config.avalon4.raspberry-pi b/cgminer/data/config.avalon4.raspberry-pi
 index f28f312..c06b244 100644
 --- a/cgminer/data/config.avalon4.raspberry-pi
