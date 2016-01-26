@@ -1,26 +1,47 @@
-From b3132c6246d6ca7a01fd3882b71ad8a0a1f7c4e8 Mon Sep 17 00:00:00 2001
-From: Mikeqin <Fengling.Qin@gmail.com>
-Date: Thu, 21 May 2015 12:53:45 +0800
-Subject: [PATCH 1/7] Encrypt the packet
-
----
- firmware/main.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
-
-diff --git a/firmware/main.c b/firmware/main.c
-index a37629a..ad207d2 100644
---- a/firmware/main.c
-+++ b/firmware/main.c
-@@ -173,6 +173,8 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
- 		memcpy(data + AVA4_MM_DNA_LEN, buf, len); /* MM_VERSION */
+diff --git b/firmware/main.c a/firmware/main.c
+index dbb55c2..1b254e6 100644
+--- b/firmware/main.c
++++ a/firmware/main.c
+@@ -382,19 +382,25 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
+ 	p[1] = AVA4_H2;
+ 
+ 	p[2] = type;
+-	p[3] = g_dna[AVA4_MM_DNA_LEN-1];
++	p[3] = g_dna[AVA4_MM_DNA_LEN - 1];
+ 	p[4] = 1;
+ 	p[5] = 1;
+ 
+ 	data = p + 6;
+ 	switch (type) {
+ 	case AVA4_P_ACKDETECT:
+-		p[3] = 0;
++		p[3] = g_module_id & 0xff;
+ 		memcpy(data, g_dna, AVA4_MM_DNA_LEN); /* MM_DNA */
+ 		memcpy(data + AVA4_MM_DNA_LEN, buf, AVA4_MM_VER_LEN); /* MM_VERSION */
+ 		memcpy(data + AVA4_MM_DNA_LEN + AVA4_MM_VER_LEN, &g_total_asics, 4);
++		/* MM area */
++		data[AVA4_MM_DNA_LEN + AVA4_MM_VER_LEN + 4] = (g_mmcfg.reserved >> 8) & 0xff;
++		data[AVA4_MM_DNA_LEN + AVA4_MM_VER_LEN + 5] = g_mmcfg.reserved & 0xff;
  		break;
  	case AVA4_P_NONCE:
 +		p[3] = (g_dna[0] ^ g_dna[AVA4_MM_DNA_LEN - 1]);
 +		memcpy(data, buf, len);
++		break;
  	case AVA4_P_TEST_RET:
+ 	case AVA4_P_SETM:
  		memcpy(data, buf, len);
- 		break;
-@@ -477,7 +479,10 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
+@@ -615,6 +621,10 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
+ 		/* Chagne voltage and freq in P_SET_VOLT / P_SET_FREQ (>= MM-4.1, MM4.0 >= 401501-4778d610) */
+ 		if ((g_errcode & CODE_TOOHOT) == CODE_TOOHOT)
+ 			break;
++
++		if ((g_errcode & CODE_LOCK) == CODE_LOCK)
++			break;
++
+ 		memcpy(&tmp, data, 4);
+ 		if (tmp & 0x80000000) {
+ 			if (g_ntime_offset != (tmp & 0x7fffffff)) {
+@@ -685,7 +695,11 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
  		break;
  
  	case AVA4_P_POLLING:
@@ -29,253 +50,11 @@ index a37629a..ad207d2 100644
 +			polling();
 +		else
 +			send_pkg(AVA4_P_STATUS, NULL, 0, 0);
- 
++
  		memcpy(&tmp, data, 4);
- 		g_led_blinking = tmp;
--- 
-1.9.1
-
-
-From eaa45019d4f6bfde7968d3c6ee6a5b05045c868c Mon Sep 17 00:00:00 2001
-From: Mikeqin <Fengling.Qin@gmail.com>
-Date: Tue, 26 May 2015 11:26:13 +0800
-Subject: [PATCH 2/7] Encrypt detect package
-
----
- firmware/main.c | 36 +++++++++++++++++++++++++++++++++---
- 1 file changed, 33 insertions(+), 3 deletions(-)
-
-diff --git a/firmware/main.c b/firmware/main.c
-index ad207d2..b900d97 100644
---- a/firmware/main.c
-+++ b/firmware/main.c
-@@ -48,6 +48,7 @@ static uint32_t glastcpm[3];
- static struct mm_config g_mmcfg;
- static uint8_t g_runmode = MOD_ECO; /* high 4bits-save/setting, low 4bits-run mode */
- static uint8_t g_getvolopt;
-+static uint8_t g_work_process = 0;
+ 		g_ledblinking = tmp;
  
- #define RET_RINGBUFFER_SIZE_RX 32
- #define RET_RINGBUFFER_MASK_RX (RET_RINGBUFFER_SIZE_RX-1)
-@@ -168,7 +169,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
- 	data = p + 6;
- 	switch (type) {
- 	case AVA4_P_ACKDETECT:
--		p[3] = 0;
-+		p[3] = g_module_id & 0xff;
- 		memcpy(data, g_dna, AVA4_MM_DNA_LEN); /* MM_DNA */
- 		memcpy(data + AVA4_MM_DNA_LEN, buf, len); /* MM_VERSION */
- 		break;
-@@ -412,6 +413,9 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
- 		debug32("[%d] N2: %08x(%08x-%08x)\n", g_module_id, mw->nonce2, g_nonce2_offset, g_nonce2_range);
- 		break;
- 	case AVA4_P_SET_VOLT:
-+		if (!g_work_process)
-+			break;
-+
- 		switch (opt & 0xf) {
- 			case MOD_CUSTOM:
- 			case MOD_ECO:
-@@ -456,6 +460,9 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
- 		send_pkg(AVA4_P_STATUS_VOLT, NULL, 0, 0);
- 		break;
- 	case AVA4_P_SET_FREQ:
-+		if (!g_work_process)
-+			break;
-+
- 		memcpy(&val[2], data, 4);
- 		memcpy(&val[1], data + 4, 4);
- 		memcpy(&val[0], data + 8, 4);
-@@ -647,12 +654,17 @@ static int get_pkg(struct mm_work *mw)
- 				if (g_module_id != AVA4_MODULE_BROADCAST)
- 					break;
- 
-+				/* FIXME: g_module_id is used in AVA4_P_ACKDETECT */
-+				memcpy(&g_module_id, g_pkg + 6 + 28, 4);
- 				if (send_pkg(AVA4_P_ACKDETECT, (uint8_t *)MM_VERSION, AVA4_MM_VER_LEN, 1)) {
--					memcpy(&g_module_id, g_pkg + 6 + 28, 4);
- 					debug32("ID: %d\n", g_module_id);
- 					iic_addr_set(g_module_id);
- 					gpio_led(g_module_id);
--				}
-+				} else
-+					g_module_id = AVA4_MODULE_BROADCAST;
-+
-+				if ((g_module_id & 0xff) == g_pkg[3])
-+					g_work_process = 1;
- 				break;
- 			case AVA4_P_REQUIRE:
- 				send_pkg(AVA4_P_STATUS, NULL, 0, 0);
-@@ -798,6 +810,7 @@ int main(int argv, char **argc)
- 			g_local_work = 0;
- 			g_hw_work = 0;
- 			g_ntime_offset = ASIC_COUNT;
-+			g_work_process = 0;
- 
- 			set_voltage(ASIC_0V);
- 			for (i = 0; i < MINER_COUNT; i++) {
-@@ -832,6 +845,23 @@ int main(int argv, char **argc)
- 			continue;
- 
- 		pgcheck();
-+
-+		if (!g_work_process) {
-+			g_local_work = 0;
-+			g_hw_work = 0;
-+			g_ntime_offset = ASIC_COUNT;
-+
-+			set_voltage(ASIC_0V);
-+			for (i = 0; i < MINER_COUNT; i++) {
-+				val[i] = ASIC_0V;
-+				g_hw_work_i[i] = 0;
-+			}
-+			set_voltage_i(val);
-+			glastcpm[0] = glastcpm[1] = glastcpm[2] = 0;
-+			adjust_fan(FAN_10);
-+			continue;
-+		}
-+
- 		if (api_get_tx_cnt() <= 23 * MINER_COUNT) {
- 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
- 			api_send_work(&work);
--- 
-1.9.1
-
-
-From 81b35e3c66aa38635d50b544af62116bdd1bfa6a Mon Sep 17 00:00:00 2001
-From: Mikeqin <Fengling.Qin@gmail.com>
-Date: Wed, 27 May 2015 18:03:37 +0800
-Subject: [PATCH 3/7] Set pll twice for process freq failed
-
----
- firmware/api.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/firmware/api.c b/firmware/api.c
-index eef70e4..082fa7f 100644
---- a/firmware/api.c
-+++ b/firmware/api.c
-@@ -312,6 +312,8 @@ void set_asic_freq(uint32_t value[])
- /* Must call set_asic_freq first, Call from AVA4_P_SET_FREQ */
- void set_asic_freq_i(uint32_t cpm[])
- {
-+	/* FIXME: change cpm twice for pll setting failed */
-+	api_change_cpm(MINER_COUNT, ASIC_COUNT, cpm[0], cpm[1], cpm[2]);
- 	api_change_cpm(MINER_COUNT, ASIC_COUNT, cpm[0], cpm[1], cpm[2]);
- }
- 
--- 
-1.9.1
-
-
-From fa1bf13dc4bae67124b4d11301cc93ea3e486c9a Mon Sep 17 00:00:00 2001
-From: Mikeqin <Fengling.Qin@gmail.com>
-Date: Wed, 27 May 2015 18:06:19 +0800
-Subject: [PATCH 4/7] Fix work process detect
-
----
- firmware/main.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/firmware/main.c b/firmware/main.c
-index b900d97..19aad30 100644
---- a/firmware/main.c
-+++ b/firmware/main.c
-@@ -660,11 +660,11 @@ static int get_pkg(struct mm_work *mw)
- 					debug32("ID: %d\n", g_module_id);
- 					iic_addr_set(g_module_id);
- 					gpio_led(g_module_id);
-+					if ((g_module_id & 0xff) == g_pkg[3])
-+						g_work_process = 1;
- 				} else
- 					g_module_id = AVA4_MODULE_BROADCAST;
- 
--				if ((g_module_id & 0xff) == g_pkg[3])
--					g_work_process = 1;
- 				break;
- 			case AVA4_P_REQUIRE:
- 				send_pkg(AVA4_P_STATUS, NULL, 0, 0);
-@@ -810,7 +810,6 @@ int main(int argv, char **argc)
- 			g_local_work = 0;
- 			g_hw_work = 0;
- 			g_ntime_offset = ASIC_COUNT;
--			g_work_process = 0;
- 
- 			set_voltage(ASIC_0V);
- 			for (i = 0; i < MINER_COUNT; i++) {
-@@ -834,6 +833,7 @@ int main(int argv, char **argc)
- 				iic_tx_reset();
- 
- 				ret_consume = ret_produce;
-+				g_work_process = 0;
- 
- 				gpio_led(g_module_id);
- 			}
--- 
-1.9.1
-
-
-From 737e1397b7e2b491de1e7ed59146eb1884c53930 Mon Sep 17 00:00:00 2001
-From: Mikeqin <Fengling.Qin@gmail.com>
-Date: Wed, 27 May 2015 19:13:05 +0800
-Subject: [PATCH 5/7] Update firmware version
-
----
- firmware/Makefile | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/firmware/Makefile b/firmware/Makefile
-index cca2d25..c52c903 100644
---- a/firmware/Makefile
-+++ b/firmware/Makefile
-@@ -8,7 +8,7 @@
- #
- 
- DATE:=$(shell date +%Y-%m-%d)
--GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-6)
-+GIT_VERSION:=b53e79
- GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
- 
- -include config.mk
--- 
-1.9.1
-
-
-From 2d56505b720916cd7da40c9c83ebfed551d1f028 Mon Sep 17 00:00:00 2001
-From: Mikeqin <Fengling.Qin@gmail.com>
-Date: Tue, 2 Jun 2015 12:56:33 +0800
-Subject: [PATCH 6/7] Support area code setting
-
----
- firmware/main.c     | 13 +++++++++++++
- firmware/protocol.h |  1 +
- 2 files changed, 14 insertions(+)
-
-diff --git a/firmware/main.c b/firmware/main.c
-index fdfb9f1..9171bd7 100644
---- a/firmware/main.c
-+++ b/firmware/main.c
-@@ -172,6 +172,9 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
- 		p[3] = g_module_id & 0xff;
- 		memcpy(data, g_dna, AVA4_MM_DNA_LEN); /* MM_DNA */
- 		memcpy(data + AVA4_MM_DNA_LEN, buf, len); /* MM_VERSION */
-+		/* MM_AREA */
-+		data[AVA4_MM_DNA_LEN + len] = (g_mmcfg.reserved >> 8) & 0xff;
-+		data[AVA4_MM_DNA_LEN + len + 1] = g_mmcfg.reserved & 0xff;
- 		break;
- 	case AVA4_P_NONCE:
- 		p[3] = (g_dna[0] ^ g_dna[AVA4_MM_DNA_LEN - 1]);
-@@ -196,6 +199,9 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
- 
- 		tmp = read_power_good();
- 		memcpy(data + 24, &tmp, 4);
-+
-+		data[28] = (g_mmcfg.reserved >> 8) & 0xff;
-+		data[29] = g_mmcfg.reserved & 0xff;
- 		break;
- 	case AVA4_P_STATUS_LW:
- 		for (i = 0; i < MINER_COUNT; i++) {
-@@ -543,6 +549,13 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
+@@ -738,6 +752,13 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
  	case AVA4_P_RSTMMTX:
  		iic_tx_reset();
  		break;
@@ -287,46 +66,80 @@ index fdfb9f1..9171bd7 100644
 +		mboot_save_config(&g_mmcfg);
 +		break;
  	default:
- 		break;
- 	}
-diff --git a/firmware/protocol.h b/firmware/protocol.h
-index 52937bc..25e20cf 100644
---- a/firmware/protocol.h
-+++ b/firmware/protocol.h
-@@ -37,6 +37,7 @@
- #define AVA4_P_FINISH	0x21
+ 		debug32("D: unkown package\n");
+ 		hexdump(p, AVA4_P_COUNT);
+@@ -801,8 +822,9 @@ static int get_pkg(struct mm_work *mw)
+ 					break;
+ 				}
+ 
++				/* FIXME: g_module_id is used in AVA4_P_ACKDETECT */
++				memcpy(&g_module_id, g_pkg + 6 + 28, 4);
+ 				if (send_pkg(AVA4_P_ACKDETECT, (uint8_t *)MM_VERSION, AVA4_MM_VER_LEN, 1)) {
+-					memcpy(&g_module_id, g_pkg + 6 + 28, 4);
+ 					debug32("ID: %d\n", g_module_id);
+ 					iic_addr_set(g_module_id);
+ 					gpio_led(1);
+@@ -816,8 +838,12 @@ static int get_pkg(struct mm_work *mw)
+ 					debug32("D: NTCB = %d\n", g_ntcb);
+ 				} else {
+ 					/* scene 2 */
++					g_module_id = AVA4_MODULE_BROADCAST;
+ 					iic_rx_reset();
+ 				}
++
++				if ((g_module_id & 0xff) == g_pkg[3])
++					g_errcode &= ~CODE_LOCK;
+ 				break;
+ 			case AVA4_P_REQUIRE:
+ 				send_pkg(AVA4_P_STATUS, NULL, 0, 0);
+@@ -907,6 +933,7 @@ static inline void idle_process(void)
+ 	g_errcode |= CODE_NOSTRATUM;
+ 	g_local_work = 0;
+ 	g_ntime_offset = ASIC_NTIME_OFFSET;
++	g_errcode |= CODE_LOCK;
+ 
+ 	api_reset();
+ 	set_voltage(ASIC_0V);
+@@ -1544,7 +1571,7 @@ int main(int argc, char **argv)
+ #endif
+ 	uint32_t val[MINER_COUNT], i;
+ 
+-	g_errcode = CODE_IDLE | CODE_NOSTRATUM;
++	g_errcode = CODE_IDLE | CODE_NOSTRATUM | CODE_LOCK;
+ 	enable_miner();
+ 	api_init(SPI_SPEED);
+ 	disable_pll();
+@@ -1707,7 +1734,8 @@ int main(int argc, char **argv)
+ 			((g_errcode & CODE_NOFAN) == CODE_NOFAN) ||
+ 			((g_errcode & CODE_INVALIDMCU) == CODE_INVALIDMCU) ||
+ 			((g_errcode & CODE_VOL_ERR) == CODE_VOL_ERR) ||
+-			(((g_errcode & CODE_ADC0_ERR) == CODE_ADC0_ERR) && ((g_errcode & CODE_ADC1_ERR) == CODE_ADC1_ERR)))
++			(((g_errcode & CODE_ADC0_ERR) == CODE_ADC0_ERR) && ((g_errcode & CODE_ADC1_ERR) == CODE_ADC1_ERR)) ||
++			((g_errcode & CODE_LOCK) == CODE_LOCK))
+ 			continue;
+ 
+ 		g_errcode &= ~CODE_IDLE;
+diff --git b/firmware/protocol.h a/firmware/protocol.h
+index 5762563..e612260 100644
+--- b/firmware/protocol.h
++++ a/firmware/protocol.h
+@@ -38,6 +38,7 @@
  #define AVA4_P_SET_VOLT	0x22
  #define AVA4_P_SET_FREQ	0x23
-+#define AVA4_P_SET_AREA	0x24
+ #define AVA4_P_SETM	0x24
++#define AVA4_P_SET_AREA 0x25
  
  /* Have to send with I2C address */
  #define AVA4_P_POLLING	0x30
--- 
-1.9.1
-
-
-From 21e21a3dfe6791f3858b71e39ec9fbdb5228540a Mon Sep 17 00:00:00 2001
-From: Mikeqin <Fengling.Qin@gmail.com>
-Date: Tue, 2 Jun 2015 17:41:18 +0800
-Subject: [PATCH 7/7] Update firmware version
-
----
- firmware/Makefile | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/firmware/Makefile b/firmware/Makefile
-index c52c903..c2714c0 100644
---- a/firmware/Makefile
-+++ b/firmware/Makefile
-@@ -8,7 +8,7 @@
- #
+diff --git b/firmware/system_config.h a/firmware/system_config.h
+index 53079ca..fd5a29a 100644
+--- b/firmware/system_config.h
++++ a/firmware/system_config.h
+@@ -25,6 +25,7 @@
+ #define CODE_ADC0_ERR   (1 << 13)
+ #define CODE_ADC1_ERR   (1 << 14)
+ #define CODE_VOL_ERR	(1 << 15)
++#define CODE_LOCK	(1 << 16)
  
- DATE:=$(shell date +%Y-%m-%d)
--GIT_VERSION:=b53e79
-+GIT_VERSION:=2d5650
- GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
- 
- -include config.mk
--- 
-1.9.1
-
+ #define IDLE_TIME	3	/* Seconds */
+ #define TEMP_TIME	1	/* Seconds */

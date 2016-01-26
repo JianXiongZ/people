@@ -1,0 +1,53 @@
+From ee6fd79caf8ded0ce5f5802187bbf3929fa058aa Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Tue, 26 Jan 2016 17:38:18 +0800
+Subject: [PATCH] Add libopenssl support
+
+---
+ cgminer/Makefile                         | 2 +-
+ cgminer/data/config.avalon6.raspberry-pi | 5 +++++
+ cgminer/data/config.avalon6.rpi2         | 5 +++++
+ 3 files changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/cgminer/Makefile b/cgminer/Makefile
+index ab9ca55..52bfd6c 100644
+--- a/cgminer/Makefile
++++ b/cgminer/Makefile
+@@ -50,7 +50,7 @@ define Package/cgminer
+ ifeq ($(CONFIG_TARGET_brcm2708_RaspberryPi),)
+ 	DEPENDS:=+libcurl +libpthread +jansson +udev
+ else
+-	DEPENDS:=+libcurl +libpthread +jansson +udev +libncurses
++	DEPENDS:=+libcurl +libpthread +jansson +udev +libncurses +libopenssl
+ endif
+ endef
+ 
+diff --git a/cgminer/data/config.avalon6.raspberry-pi b/cgminer/data/config.avalon6.raspberry-pi
+index 3efd77a..0ceb8d5 100644
+--- a/cgminer/data/config.avalon6.raspberry-pi
++++ b/cgminer/data/config.avalon6.raspberry-pi
+@@ -49,3 +49,8 @@ CONFIG_PACKAGE_coreutils=y
+ CONFIG_PACKAGE_sed=y
+ 
+ CONFIG_PACKAGE_mm-tools=y
++
++#
++# SSH
++#
++CONFIG_PACKAGE_libopenssl=y
+diff --git a/cgminer/data/config.avalon6.rpi2 b/cgminer/data/config.avalon6.rpi2
+index d9b04e2..e2fa33c 100644
+--- a/cgminer/data/config.avalon6.rpi2
++++ b/cgminer/data/config.avalon6.rpi2
+@@ -50,3 +50,8 @@ CONFIG_PACKAGE_coreutils=y
+ CONFIG_PACKAGE_sed=y
+ 
+ CONFIG_PACKAGE_mm-tools=y
++
++#
++# SSH
++#
++CONFIG_PACKAGE_libopenssl=y
+-- 
+2.0.0
+

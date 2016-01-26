@@ -1,0 +1,50 @@
+From ab5f3a970752ee71dbe1f97e8313b7c6eb010fe1 Mon Sep 17 00:00:00 2001
+From: Mikeqin <Fengling.Qin@gmail.com>
+Date: Tue, 26 Jan 2016 17:45:41 +0800
+Subject: [PATCH] Support area code setting
+
+---
+ cgminer/files/cgminer.avalon6.init | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/cgminer/files/cgminer.avalon6.init b/cgminer/files/cgminer.avalon6.init
+index 2952cbb..43aca21 100755
+--- a/cgminer/files/cgminer.avalon6.init
++++ b/cgminer/files/cgminer.avalon6.init
+@@ -26,6 +26,7 @@ start() {
+ 	local _mo
+ 
+ 	local _ntp_enable
++	local _area_code
+ 
+ 	config_load cgminer
+ 
+@@ -47,6 +48,7 @@ start() {
+ 	config_get _mo default more_options
+ 
+ 	config_get _ntp_enable default ntp_enable
++	config_get _area_code default area_code
+ 
+ 	if [ "$_pool1url" != "" -a "$_pool1user" != "" -a "$_pool1pw" != "" ]; then
+ 	    POOL1="-o $_pool1url -O $_pool1user:$_pool1pw"
+@@ -81,11 +83,15 @@ start() {
+         # Make sure udevd run before cgminer start
+         UDEVDCNT=`pidof udevd | wc -w`
+         if [ "$UDEVDCNT" == "0" ]; then
+-                udevd --daemon
++		udevd --daemon
+         fi
+ 
++	if [ "$_area_code" == "" ]; then
++		_area_code = 0
++	fi
++
+ 	sleep 2
+-	start-stop-daemon -S -x $APP -p $PID_FILE -m -b -- $PARAMS
++	env AVA4_AREA=$_area_code start-stop-daemon -S -x $APP -p $PID_FILE -m -b -- $PARAMS
+ }
+ 
+ stop() {
+-- 
+2.0.0
+
