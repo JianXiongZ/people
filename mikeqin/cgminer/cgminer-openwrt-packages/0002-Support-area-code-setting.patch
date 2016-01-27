@@ -1,4 +1,4 @@
-From ab5f3a970752ee71dbe1f97e8313b7c6eb010fe1 Mon Sep 17 00:00:00 2001
+From 291db381cf61ffb830d2f871a7df4b6324354ccb Mon Sep 17 00:00:00 2001
 From: Mikeqin <Fengling.Qin@gmail.com>
 Date: Tue, 26 Jan 2016 17:45:41 +0800
 Subject: [PATCH] Support area code setting
@@ -8,7 +8,7 @@ Subject: [PATCH] Support area code setting
  1 file changed, 8 insertions(+), 2 deletions(-)
 
 diff --git a/cgminer/files/cgminer.avalon6.init b/cgminer/files/cgminer.avalon6.init
-index 2952cbb..43aca21 100755
+index 2952cbb..e594e0b 100755
 --- a/cgminer/files/cgminer.avalon6.init
 +++ b/cgminer/files/cgminer.avalon6.init
 @@ -26,6 +26,7 @@ start() {
@@ -36,7 +36,7 @@ index 2952cbb..43aca21 100755
          fi
  
 +	if [ "$_area_code" == "" ]; then
-+		_area_code = 0
++		_area_code=0
 +	fi
 +
  	sleep 2
