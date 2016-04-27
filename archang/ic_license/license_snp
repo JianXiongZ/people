@@ -18,6 +18,7 @@ then
 		SNP_PID=`pgrep -P $LMG_PID`
 		[ -n "$SNP_PID" ] && su -s /bin/bash -c "kill -9 $SNP_PID" eda && echo "Previous snp daemons killed."
 		su -s /bin/bash -c "kill -9 $LMG_PID" eda && echo "Previous lmg daemons killed."
+		rm -f /var/tmp/locksnpslmd
 	fi
 fi
 
