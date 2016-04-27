@@ -10,7 +10,7 @@ else
 fi
 
 PID_FILE=/tmp/license_cal.pid
-if [ -f "$PID_FILE"]
+if [ -f "$PID_FILE" ]
 then
 	read LMG_PID <$PID_FILE
 	if [ -n "$LMG_PID" ]
@@ -22,7 +22,7 @@ then
 fi
 
 LICENSE=${1:-"/home/eda/mentor/aoi_cal_2015.4_33.23/license/cal_to_velamost_b083fee36f4d_20160220.dat"}
-[! -f "$LICENSE"] && echo "'$LICENSE' does not exit." && exit 0
+[ ! -f "$LICENSE" ] && echo "'$LICENSE' does not exit." && exit 0
 su -s /bin/bash -c "sed -i -e 's/^SERVER\slocalhost/SERVER master/' $LICENSE" eda
 su -s /bin/bash -c "sed -i -e 's/^VENDOR\smgcld*$/VENDOR mgcld mgcld port=56507/' $LICENSE" eda
 echo "Cal license file patched."
@@ -31,8 +31,8 @@ echo "Starting Cal license daemon..."
 unset SNP_PID
 while [ -z "$SNP_PID" ]
 do
-	su -s /bin/bash -c "/home/eda/mentor/aoi_cal_2015.4_33.23/bin/lmgrd -l +/home/eda/log/mgcld.log -c $LICENSE & echo $!>$PID_FILE" eda
-	read LMG_PID <$PID_FILE
+	su -s /bin/bash -c "/home/eda/mentor/aoi_cal_2015.4_33.23/bin/lmgrd -l +/home/eda/log/mgcld.log -c $LICENSE & echo $! > $PID_FILE" eda
+	read LMG_PID < $PID_FILE
 	sleep 9
 	SNP_PID=`pgrep -P $LMG_PID`
 	[ -z "$SNP_PID" ] && echo "Restarting Cal license daemon..."

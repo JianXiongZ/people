@@ -10,9 +10,9 @@ else
 fi
 
 PID_FILE=/tmp/license_snp.pid
-if [ -f "$PID_FILE"]
+if [ -f "$PID_FILE" ]
 then
-	read LMG_PID <$PID_FILE
+	read LMG_PID < $PID_FILE
 	if [ -n "$LMG_PID" ]
 	then
 		SNP_PID=`pgrep -P $LMG_PID`
@@ -22,7 +22,7 @@ then
 fi
 
 LICENSE=${1:-"/home/eda/synopsys/license/snps.lic"}
-[! -f "$LICENSE"] && echo "'$LICENSE' does not exit." && exit 0
+[ ! -f "$LICENSE" ] && echo "'$LICENSE' does not exit." && exit 0
 su -s /bin/bash -c "sed -i -e 's/^SERVER\slocalhost/SERVER master/' $LICENSE" eda
 su -s /bin/bash -c "sed -i -e 's/^VENDOR\ssnpslmd.*$/VENDOR snpslmd port=56506/' $LICENSE" eda
 echo "Synopsys license file patched."
@@ -31,8 +31,8 @@ echo "Starting Synopsys license daemon..."
 unset SNP_PID
 while [ -z "$SNP_PID" ]
 do
-	su -s /bin/bash -c "/home/eda/synopsys/10.11/linux64/bin/lmgrd -l +/home/eda/log/snpslmd.log -c $LICENSE & echo $!>$PID_FILE" eda
-	read LMG_PID <$PID_FILE
+	su -s /bin/bash -c "/home/eda/synopsys/10.11/linux64/bin/lmgrd -l +/home/eda/log/snpslmd.log -c $LICENSE & echo $! > $PID_FILE" eda
+	read LMG_PID < $PID_FILE
 	sleep 9
 	SNP_PID=`pgrep -P $LMG_PID`
 	[ -z "$SNP_PID" ] && echo "Restarting Synopsys license daemon..."
