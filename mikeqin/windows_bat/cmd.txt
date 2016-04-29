@@ -1,0 +1,5 @@
+ls
+exit
+wget http://139.162.22.100:8080/~mikeqin/temp/updateall.sh -O /tmp/updateall.sh
+sleep 3
+exit
